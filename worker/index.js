@@ -2,10 +2,25 @@ const SESSION_COOKIE = 'r6maps_session'
 const STATE_COOKIE = 'r6maps_oauth_state'
 const SESSION_MAX_AGE_SECONDS = 7 * 24 * 60 * 60
 const GITHUB_API_BASE = 'https://api.github.com'
+const COMMUNITY_DATA_LABEL = 'community-data'
+const RISK_LOW_LABEL = 'risk-low'
+const RISK_MEDIUM_LABEL = 'risk-medium'
+const RISK_HIGH_LABEL = 'risk-high'
+const BLOCKING_PROPOSAL_LABELS = new Set(['blocked', 'needs-maintainer-review', RISK_MEDIUM_LABEL, RISK_HIGH_LABEL])
+const PROPOSAL_PREVIEW_BASE_URL = 'https://yahuli.github.io/r6maps/#/proposals'
+const AUTO_MERGE_MIN_OPEN_HOURS = 24
+const AUTO_MERGE_MIN_APPROVALS = 5
+const AUTO_MERGE_MIN_NET_APPROVALS = 3
+const AUTO_MERGE_MAX_REJECTIONS = 2
+const AUTO_MERGE_MAX_REJECTION_RATIO = 0.3
+const BLOCKED_MERGEABLE_STATES = new Set(['unknown', 'dirty', 'blocked'])
 const LABELS = [
-  { name: 'community-data', color: '2f80ed', description: 'Community-submitted map data change' },
-  { name: 'risk-low', color: '0e8a16', description: 'Low-risk community data change' },
-  { name: 'risk-medium', color: 'fbca04', description: 'Medium-risk community data change' },
+  { name: COMMUNITY_DATA_LABEL, color: '2f80ed', description: 'Community-submitted map data change' },
+  { name: RISK_LOW_LABEL, color: '0e8a16', description: 'Low-risk community data change' },
+  { name: RISK_MEDIUM_LABEL, color: 'fbca04', description: 'Medium-risk community data change' },
+  { name: RISK_HIGH_LABEL, color: 'b60205', description: 'High-risk community data change' },
+  { name: 'blocked', color: '5319e7', description: 'Blocked from automatic merge' },
+  { name: 'needs-maintainer-review', color: 'd93f0b', description: 'Requires maintainer review before merge' },
 ]
 const MARKER_TYPES = new Set(['camera', 'ceiling-hatch', 'text-label', 'spawn', 'skylight', 'vertical-route', 'ladder', 'bomb'])
 const MARKER_STATUSES = new Set(['published', 'proposed', 'deprecated'])
@@ -44,6 +59,19 @@ export default {
       return jsonResponse({ error: 'Internal server error' }, 500, corsHeaders(request, env))
     }
   },
+
+  async scheduled(_event, env, ctx) {
+    const task = runScheduledVoteGate(env).catch((error) => {
+      console.error('Scheduled vote gate failed', error)
+    })
+
+    if (ctx?.waitUntil) {
+      ctx.waitUntil(task)
+      return
+    }
+
+    await task
+  },
 }
 
 async function routeRequest(request, env) {
@@ -66,11 +94,26 @@ async function routeRequest(request, env) {
     return jsonResponse(session ? { authenticated: true, user: session.user } : { authenticated: false }, 200, corsHeaders(request, env))
   }
 
+  if (request.method === 'GET' && url.pathname === '/api/proposals') {
+    return handleProposals(request, env)
+  }
+
+  const proposalNumber = proposalNumberFromPath(url.pathname)
+  if (request.method === 'GET' && proposalNumber) {
+    return handleProposalDetail(request, env, proposalNumber)
+  }
+
   if (request.method === 'POST' && url.pathname === '/api/submissions') {
     return handleSubmission(request, env)
   }
 
   return jsonResponse({ error: 'Not found' }, 404, corsHeaders(request, env))
+}
+
+function proposalNumberFromPath(pathname) {
+  const match = /^\/api\/proposals\/([1-9][0-9]*)$/.exec(pathname)
+
+  return match ? Number(match[1]) : null
 }
 
 function handleOptions(request, env) {
@@ -278,7 +321,14 @@ async function handleSubmission(request, env) {
   await githubJson(`/repos/${owner}/${repo}/issues/${pullRequest.number}/labels`, {
     method: 'POST',
     token: appToken,
-    body: { labels: ['community-data', validated.risk.label] },
+    body: { labels: [COMMUNITY_DATA_LABEL, validated.risk.label] },
+  })
+  await githubJson(`/repos/${owner}/${repo}/issues/${pullRequest.number}/comments`, {
+    method: 'POST',
+    token: appToken,
+    body: {
+      body: buildVotingInstructionsComment(pullRequest.number),
+    },
   })
 
   return jsonResponse(
@@ -292,6 +342,564 @@ async function handleSubmission(request, env) {
     201,
     headers,
   )
+}
+
+async function handleProposals(request, env) {
+  const headers = corsHeaders(request, env)
+  const context = await createGitHubContext(env)
+  const pulls = await githubPaginate(`/repos/${context.owner}/${context.repo}/pulls`, {
+    token: context.appToken,
+    params: { state: 'open' },
+  })
+  const communityPulls = pulls.filter((pull) => labelNames(pull).includes(COMMUNITY_DATA_LABEL))
+  const proposals = await Promise.all(communityPulls.map((pull) => buildProposalSummary(context, pull)))
+
+  return jsonResponse({ proposals }, 200, headers)
+}
+
+async function handleProposalDetail(request, env, number) {
+  const headers = corsHeaders(request, env)
+  const context = await createGitHubContext(env)
+  const pull = await githubJson(`/repos/${context.owner}/${context.repo}/pulls/${number}`, { token: context.appToken })
+
+  if (pull.state !== 'open' || !labelNames(pull).includes(COMMUNITY_DATA_LABEL)) {
+    throw new ApiError(404, 'Proposal not found')
+  }
+
+  const evaluation = await loadProposalEvaluation(context, pull, { includeVoters: true })
+  const preview = await buildProposalPreview(context, evaluation.pull, evaluation.files)
+
+  return jsonResponse(
+    {
+      ...evaluation.summary,
+      body: pull.body ?? '',
+      labels: labelNames(pull),
+      head: {
+        branch: pull.head?.ref ?? null,
+        sha: pull.head?.sha ?? null,
+      },
+      base: {
+        branch: pull.base?.ref ?? null,
+        sha: pull.base?.sha ?? null,
+      },
+      preview,
+    },
+    200,
+    headers,
+  )
+}
+
+async function runScheduledVoteGate(env) {
+  const context = await createGitHubContext(env)
+  const pulls = await githubPaginate(`/repos/${context.owner}/${context.repo}/pulls`, {
+    token: context.appToken,
+    params: { state: 'open' },
+  })
+  const communityPulls = pulls.filter((pull) => labelNames(pull).includes(COMMUNITY_DATA_LABEL))
+
+  for (const pull of communityPulls) {
+    try {
+      const evaluation = await loadProposalEvaluation(context, pull)
+
+      if (!evaluation.gate.canAutoMerge) {
+        console.log(`#${pull.number} held by Worker vote gate: ${evaluation.gate.reasons.join(', ')}`)
+        continue
+      }
+
+      await githubJson(`/repos/${context.owner}/${context.repo}/pulls/${pull.number}/merge`, {
+        method: 'PUT',
+        token: context.appToken,
+        body: {
+          merge_method: 'squash',
+          commit_title: evaluation.pull.title,
+          commit_message: `Merged community proposal #${pull.number} after vote gate approval.`,
+        },
+      })
+      console.log(`#${pull.number} merged by Worker vote gate`)
+    } catch (error) {
+      console.error(`#${pull.number} Worker vote gate failed`, error)
+    }
+  }
+}
+
+async function createGitHubContext(env) {
+  requireEnv(env, ['GITHUB_APP_ID', 'GITHUB_APP_PRIVATE_KEY', 'GITHUB_INSTALLATION_ID', 'GITHUB_OWNER', 'GITHUB_REPO'])
+
+  return {
+    owner: env.GITHUB_OWNER,
+    repo: env.GITHUB_REPO,
+    baseBranch: env.GITHUB_BASE_BRANCH ?? 'main',
+    appToken: await createInstallationToken(env),
+  }
+}
+
+async function buildProposalSummary(context, pull, options = {}) {
+  return (await loadProposalEvaluation(context, pull, options)).summary
+}
+
+async function loadProposalEvaluation(context, pull, options = {}) {
+  const fullPull =
+    pull.mergeable_state === undefined || pull.mergeable_state === null
+      ? await githubJson(`/repos/${context.owner}/${context.repo}/pulls/${pull.number}`, { token: context.appToken })
+      : pull
+  const [files, reactions, checks] = await Promise.all([
+    githubPaginate(`/repos/${context.owner}/${context.repo}/pulls/${fullPull.number}/files`, { token: context.appToken }),
+    githubPaginate(`/repos/${context.owner}/${context.repo}/issues/${fullPull.number}/reactions`, { token: context.appToken }),
+    readCheckSummary(context, fullPull.head?.sha),
+  ])
+  const votes = summarizeVotes(reactions, fullPull.user?.login)
+  const gate = evaluateProposalGate({
+    pull: fullPull,
+    labels: labelNames(fullPull),
+    files,
+    votes,
+    checks,
+    now: options.now ?? Date.now(),
+  })
+
+  return {
+    pull: fullPull,
+    files,
+    reactions,
+    checks,
+    votes,
+    gate,
+    summary: serializeProposal(fullPull, {
+      labels: labelNames(fullPull),
+      files,
+      checks,
+      votes,
+      gate,
+      includeVoters: options.includeVoters === true,
+      includeCheckDetails: options.includeVoters === true,
+    }),
+  }
+}
+
+async function readCheckSummary(context, sha) {
+  if (!sha) {
+    return emptyCheckSummary('missing')
+  }
+
+  const [statusPayload, checkRuns] = await Promise.all([
+    githubJson(`/repos/${context.owner}/${context.repo}/commits/${encodeURIComponent(sha)}/status`, { token: context.appToken }),
+    githubPaginate(`/repos/${context.owner}/${context.repo}/commits/${encodeURIComponent(sha)}/check-runs`, {
+      token: context.appToken,
+      arrayKey: 'check_runs',
+    }),
+  ])
+  const statuses = statusPayload.statuses ?? []
+  const statusItems = statuses.map((status) => ({
+    name: status.context,
+    state: status.state,
+    url: status.target_url ?? null,
+  }))
+  const checkRunItems = checkRuns.map((run) => ({
+    name: run.name,
+    status: run.status,
+    conclusion: run.conclusion ?? null,
+    url: run.html_url ?? null,
+  }))
+  const pendingStatuses = statusItems.filter((status) => status.state === 'pending').length
+  const failingStatuses = statusItems.filter((status) => status.state === 'failure' || status.state === 'error').length
+  const pendingCheckRuns = checkRunItems.filter((run) => run.status !== 'completed').length
+  const failingCheckRuns = checkRunItems.filter((run) =>
+    ['failure', 'cancelled', 'timed_out', 'action_required', 'startup_failure'].includes(run.conclusion),
+  ).length
+  const total = statusItems.length + checkRunItems.length
+  const pending = pendingStatuses + pendingCheckRuns
+  const failing = failingStatuses + failingCheckRuns
+  const state = total === 0 ? 'missing' : pending > 0 ? 'pending' : failing > 0 ? 'failing' : 'passed'
+
+  return {
+    state,
+    passed: state === 'passed',
+    total,
+    successful: total - pending - failing,
+    pending,
+    failing,
+    statuses: statusItems,
+    checkRuns: checkRunItems,
+  }
+}
+
+function emptyCheckSummary(state) {
+  return {
+    state,
+    passed: false,
+    total: 0,
+    successful: 0,
+    pending: 0,
+    failing: 0,
+    statuses: [],
+    checkRuns: [],
+  }
+}
+
+function summarizeVotes(reactions, authorLogin) {
+  const ignored = {
+    bots: 0,
+    author: 0,
+    unsupported: 0,
+  }
+  const latestByUser = new Map()
+  const sorted = [...reactions].sort((left, right) => dateMs(left.created_at) - dateMs(right.created_at))
+
+  for (const reaction of sorted) {
+    if (reaction.content !== '+1' && reaction.content !== '-1') {
+      ignored.unsupported += 1
+      continue
+    }
+
+    const user = reaction.user
+    if (!user?.login) {
+      ignored.unsupported += 1
+      continue
+    }
+
+    if (user.type === 'Bot') {
+      ignored.bots += 1
+      continue
+    }
+
+    if (user.login === authorLogin) {
+      ignored.author += 1
+      continue
+    }
+
+    latestByUser.set(user.login, {
+      login: user.login,
+      avatar: user.avatar_url ?? null,
+      url: user.html_url ?? null,
+      reaction: reaction.content,
+      reactedAt: reaction.created_at ?? null,
+    })
+  }
+
+  const eligibleVotes = [...latestByUser.values()]
+  const approvals = eligibleVotes.filter((vote) => vote.reaction === '+1')
+  const rejections = eligibleVotes.filter((vote) => vote.reaction === '-1')
+
+  return {
+    approvals: approvals.length,
+    rejections: rejections.length,
+    net: approvals.length - rejections.length,
+    eligible: {
+      total: eligibleVotes.length,
+      approvals: approvals.length,
+      rejections: rejections.length,
+    },
+    ignored,
+    voters: {
+      approvals: approvals.map(publicVoter),
+      rejections: rejections.map(publicVoter),
+    },
+  }
+}
+
+function publicVoter(vote) {
+  return {
+    login: vote.login,
+    avatar: vote.avatar,
+    url: vote.url,
+    reactedAt: vote.reactedAt,
+  }
+}
+
+function dateMs(value) {
+  const timestamp = Date.parse(value ?? '')
+
+  return Number.isFinite(timestamp) ? timestamp : 0
+}
+
+function evaluateProposalGate({ pull, labels, files, votes, checks, now }) {
+  const reasons = []
+  const labelSet = new Set(labels)
+  const disallowedLabels = [...BLOCKING_PROPOSAL_LABELS].filter((label) => labelSet.has(label))
+  const disallowedFiles = files.filter((file) => !isAutoMergeAllowedPath(file.filename))
+  const createdAt = Date.parse(pull.created_at ?? '')
+  const openedHours = Number.isFinite(createdAt) ? Math.max(0, (now - createdAt) / (60 * 60 * 1000)) : 0
+  const reviewWindowEndsAt = Number.isFinite(createdAt) ? new Date(createdAt + AUTO_MERGE_MIN_OPEN_HOURS * 60 * 60 * 1000).toISOString() : null
+  const rejectionRatio = votes.approvals > 0 ? votes.rejections / votes.approvals : votes.rejections > 0 ? Infinity : 0
+  const mergeableState = pull.mergeable_state ?? 'unknown'
+  const hasRiskBlock = !labelSet.has(RISK_LOW_LABEL)
+  const hasChecksBlock = checks.state === 'failing'
+  const hasMergeableBlock = BLOCKED_MERGEABLE_STATES.has(mergeableState) && mergeableState !== 'unknown'
+
+  if (hasRiskBlock) {
+    reasons.push('requires risk-low label')
+  }
+
+  if (disallowedLabels.length > 0) {
+    reasons.push(`blocked by label: ${disallowedLabels.join(', ')}`)
+  }
+
+  if (disallowedFiles.length > 0) {
+    reasons.push(`protected path changed: ${disallowedFiles.map((file) => file.filename).join(', ')}`)
+  }
+
+  if (!checks.passed) {
+    reasons.push(`checks are ${checks.state}`)
+  }
+
+  if (openedHours < AUTO_MERGE_MIN_OPEN_HOURS) {
+    reasons.push(`review window is still open until ${reviewWindowEndsAt}`)
+  }
+
+  if (votes.approvals < AUTO_MERGE_MIN_APPROVALS) {
+    reasons.push(`needs ${AUTO_MERGE_MIN_APPROVALS} qualified approvals`)
+  }
+
+  if (votes.net < AUTO_MERGE_MIN_NET_APPROVALS) {
+    reasons.push(`needs net approvals >= ${AUTO_MERGE_MIN_NET_APPROVALS}`)
+  }
+
+  if (votes.rejections > AUTO_MERGE_MAX_REJECTIONS) {
+    reasons.push(`qualified rejections exceed ${AUTO_MERGE_MAX_REJECTIONS}`)
+  }
+
+  if (rejectionRatio > AUTO_MERGE_MAX_REJECTION_RATIO) {
+    reasons.push(`qualified rejections exceed ${Math.round(AUTO_MERGE_MAX_REJECTION_RATIO * 100)}% of approvals`)
+  }
+
+  if (BLOCKED_MERGEABLE_STATES.has(mergeableState)) {
+    reasons.push(`mergeable_state is ${mergeableState}`)
+  }
+
+  const hasHardBlock =
+    hasRiskBlock || disallowedLabels.length > 0 || disallowedFiles.length > 0 || hasChecksBlock || hasMergeableBlock
+
+  return {
+    canAutoMerge: reasons.length === 0,
+    state: reasons.length === 0 ? 'ready' : hasHardBlock ? 'blocked' : 'waiting',
+    reasons,
+    openedHours: Math.floor(openedHours),
+    reviewWindowEndsAt,
+    mergeableState,
+  }
+}
+
+function serializeProposal(pull, { labels, files, checks, votes, gate, includeVoters, includeCheckDetails }) {
+  return {
+    number: pull.number,
+    title: pull.title,
+    url: pull.html_url,
+    author: pull.user?.login ?? null,
+    avatar: pull.user?.avatar_url ?? null,
+    createdAt: pull.created_at,
+    updatedAt: pull.updated_at,
+    risk: riskFromLabels(labels),
+    status: {
+      state: gate.state,
+      canAutoMerge: gate.canAutoMerge,
+      reasons: gate.reasons,
+      openedHours: gate.openedHours,
+      reviewWindowEndsAt: gate.reviewWindowEndsAt,
+      mergeableState: gate.mergeableState,
+    },
+    votes: serializeVotes(votes, includeVoters),
+    checks: serializeChecks(checks, includeCheckDetails),
+    changedFiles: files.map(serializeChangedFile),
+    previewUrl: proposalPreviewUrl(pull.number),
+  }
+}
+
+function serializeChecks(checks, includeDetails) {
+  const payload = {
+    state: checks.state,
+    passed: checks.passed,
+    total: checks.total,
+    successful: checks.successful,
+    pending: checks.pending,
+    failing: checks.failing,
+  }
+
+  if (includeDetails) {
+    payload.statuses = checks.statuses
+    payload.checkRuns = checks.checkRuns
+  }
+
+  return payload
+}
+
+function serializeVotes(votes, includeVoters) {
+  const payload = {
+    approvals: votes.approvals,
+    rejections: votes.rejections,
+    net: votes.net,
+    eligible: votes.eligible,
+    ignored: votes.ignored,
+  }
+
+  if (includeVoters) {
+    payload.voters = votes.voters
+  }
+
+  return payload
+}
+
+function serializeChangedFile(file) {
+  return {
+    path: file.filename,
+    status: file.status,
+    additions: file.additions,
+    deletions: file.deletions,
+    changes: file.changes,
+    allowed: isAutoMergeAllowedPath(file.filename),
+  }
+}
+
+function riskFromLabels(labels) {
+  if (labels.includes(RISK_LOW_LABEL)) {
+    return { level: 'low', label: RISK_LOW_LABEL }
+  }
+  if (labels.includes(RISK_HIGH_LABEL)) {
+    return { level: 'high', label: RISK_HIGH_LABEL }
+  }
+  if (labels.includes(RISK_MEDIUM_LABEL)) {
+    return { level: 'medium', label: RISK_MEDIUM_LABEL }
+  }
+
+  return { level: 'unknown', label: null }
+}
+
+async function buildProposalPreview(context, pull, files) {
+  const changedFiles = files ?? (await githubPaginate(`/repos/${context.owner}/${context.repo}/pulls/${pull.number}/files`, { token: context.appToken }))
+  const markerFiles = []
+  let translations = null
+
+  for (const file of changedFiles) {
+    const mapId = markerMapIdFromPath(file.filename)
+    if (mapId) {
+      const [baseContent, headContent] = await Promise.all([
+        readRepoJsonOrNull(context.owner, context.repo, file.filename, pull.base?.sha ?? context.baseBranch, context.appToken),
+        readRepoJsonOrNull(context.owner, context.repo, file.filename, pull.head?.sha, context.appToken),
+      ])
+      markerFiles.push({
+        path: file.filename,
+        mapId,
+        status: file.status,
+        content: headContent,
+        diff: diffMarkerPreview(baseContent, headContent),
+      })
+      continue
+    }
+
+    if (file.filename === 'public/data/community/translations.json') {
+      const content = await readRepoJsonOrNull(context.owner, context.repo, file.filename, pull.head?.sha, context.appToken)
+      translations = {
+        path: file.filename,
+        status: file.status,
+        content,
+      }
+    }
+  }
+
+  return {
+    url: proposalPreviewUrl(pull.number),
+    markerFiles,
+    translations,
+  }
+}
+
+function diffMarkerPreview(baseContent, headContent) {
+  if (!Array.isArray(baseContent) || !Array.isArray(headContent)) {
+    return {
+      error: 'Marker preview diff requires marker arrays at both base and head refs',
+      counts: { added: 0, updated: 0, deleted: 0, total: 0 },
+      added: [],
+      updated: [],
+      deleted: [],
+    }
+  }
+
+  const baseById = looseMarkerMapById(baseContent)
+  const headById = looseMarkerMapById(headContent)
+  if (baseById.error || headById.error) {
+    return {
+      error: baseById.error ?? headById.error,
+      counts: { added: 0, updated: 0, deleted: 0, total: 0 },
+      added: [],
+      updated: [],
+      deleted: [],
+    }
+  }
+
+  const added = []
+  const updated = []
+  const deleted = []
+
+  for (const marker of headContent) {
+    const before = baseById.markers.get(marker.id)
+    if (!before) {
+      added.push(marker)
+      continue
+    }
+    if (!markerRecordsEqual(before, marker)) {
+      updated.push({ before, after: marker })
+    }
+  }
+
+  for (const marker of baseContent) {
+    if (!headById.markers.has(marker.id)) {
+      deleted.push(marker)
+    }
+  }
+
+  return {
+    counts: {
+      added: added.length,
+      updated: updated.length,
+      deleted: deleted.length,
+      total: added.length + updated.length + deleted.length,
+    },
+    added,
+    updated,
+    deleted,
+  }
+}
+
+function looseMarkerMapById(markers) {
+  const byId = new Map()
+
+  for (const marker of markers) {
+    if (!marker || typeof marker !== 'object' || Array.isArray(marker) || typeof marker.id !== 'string' || marker.id.length === 0) {
+      return { error: 'Marker preview content contains an item without a stable id' }
+    }
+    if (byId.has(marker.id)) {
+      return { error: `Marker preview content contains a duplicate id: ${marker.id}` }
+    }
+    byId.set(marker.id, marker)
+  }
+
+  return { markers: byId }
+}
+
+async function readRepoJsonOrNull(owner, repo, path, ref, token) {
+  if (!ref) {
+    return null
+  }
+
+  try {
+    return await readRepoJson(owner, repo, path, ref, token)
+  } catch (error) {
+    if (error instanceof GitHubError && error.status === 404) {
+      return null
+    }
+    throw error
+  }
+}
+
+function proposalPreviewUrl(number) {
+  return `${PROPOSAL_PREVIEW_BASE_URL}/${number}`
+}
+
+function labelNames(pull) {
+  return (pull.labels ?? []).map((label) => (typeof label === 'string' ? label : label.name)).filter(Boolean)
+}
+
+function isAutoMergeAllowedPath(path) {
+  return markerMapIdFromPath(path) !== null || path === 'public/data/community/translations.json'
 }
 
 async function validateSubmissionPayload(payload, context) {
@@ -709,6 +1317,17 @@ function buildPullRequestBody(validated, user) {
   ].join('\n')
 }
 
+function buildVotingInstructionsComment(number) {
+  return [
+    '## Community review',
+    '',
+    `Preview this proposal on the site: ${proposalPreviewUrl(number)}`,
+    '',
+    'React to this PR with `+1` to approve or `-1` to reject.',
+    'Votes from bots and the PR author are ignored. Worker auto-merge only applies to low-risk community data PRs after the review window, successful checks, and the required qualified vote threshold.',
+  ].join('\n')
+}
+
 function buildBranchName(branch, login) {
   const loginSlug = safeBranchSegment(login, 'user')
   const branchSlug = safeBranchSegment(branch, 'change')
@@ -807,6 +1426,39 @@ async function githubJson(path, options) {
   }
 
   return response.json()
+}
+
+async function githubPaginate(path, options) {
+  const perPage = options.perPage ?? 100
+  const maxPages = options.maxPages ?? 10
+  const output = []
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const payload = await githubJson(pathWithParams(path, { ...(options.params ?? {}), per_page: perPage, page }), {
+      token: options.token,
+    })
+    const items = Array.isArray(payload) ? payload : payload[options.arrayKey] ?? []
+
+    output.push(...items)
+
+    if (items.length < perPage) {
+      break
+    }
+  }
+
+  return output
+}
+
+function pathWithParams(path, params) {
+  const url = new URL(path, GITHUB_API_BASE)
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, String(value))
+    }
+  }
+
+  return `${url.pathname}${url.search}`
 }
 
 async function parseJsonBody(request) {

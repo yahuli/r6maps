@@ -1,14 +1,12 @@
 name: Vote Gate
 
 on:
-  schedule:
-    - cron: '17 * * * *'
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   issues: read
-  pull-requests: write
+  pull-requests: read
   checks: read
 
 jobs:
@@ -25,6 +23,8 @@ jobs:
             const { evaluateVoteGate } = await import(`${process.env.GITHUB_WORKSPACE}/tools/evaluate-vote-gate.mjs`);
             const { owner, repo } = context.repo;
 
+            core.info('Manual evaluation only. Cloudflare Worker scheduled handler is the only automatic merge entry point.');
+
             const pulls = await github.paginate(github.rest.pulls.list, {
               owner,
               repo,
@@ -33,7 +33,13 @@ jobs:
             });
 
             for (const pull of pulls) {
-              const labelNames = pull.labels.map((label) => label.name);
+              const fullPull = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: pull.number,
+              });
+              const labelNames = fullPull.data.labels.map((label) => label.name);
+
               if (!labelNames.includes('community-data')) {
                 continue;
               }
@@ -52,35 +58,50 @@ jobs:
                 per_page: 100,
               });
 
-              const risk = labelNames.includes('risk-low')
-                ? 'low'
-                : labelNames.includes('risk-high')
-                  ? 'high'
-                  : 'medium';
-
-              const gate = evaluateVoteGate({
-                risk,
-                checksPassed: pull.mergeable_state === 'clean' || pull.mergeable_state === 'unstable',
-                changedFiles: files.map((file) => file.filename),
-                votes: reactions
-                  .filter((reaction) => reaction.content === '+1' || reaction.content === '-1')
-                  .map((reaction) => ({
-                    user: reaction.user.login,
-                    reaction: reaction.content,
-                    qualified: reaction.user.type !== 'Bot' && reaction.user.login !== pull.user.login,
-                  })),
-              });
-
-              if (!gate.canAutoMerge) {
-                core.info(`#${pull.number} held: ${gate.reasons.join(', ')}`);
-                continue;
-              }
-
-              await github.rest.pulls.merge({
+              const status = await github.rest.repos.getCombinedStatusForRef({
                 owner,
                 repo,
-                pull_number: pull.number,
-                merge_method: 'squash',
+                ref: fullPull.data.head.sha,
               });
-              core.info(`#${pull.number} merged by vote gate`);
+
+              const checkRuns = await github.paginate(
+                github.rest.checks.listForRef,
+                {
+                  owner,
+                  repo,
+                  ref: fullPull.data.head.sha,
+                  per_page: 100,
+                },
+                (response) => response.data.check_runs,
+              );
+
+              const pendingStatuses = status.data.statuses.filter((item) => item.state === 'pending').length;
+              const failingStatuses = status.data.statuses.filter((item) => item.state === 'failure' || item.state === 'error').length;
+              const pendingCheckRuns = checkRuns.filter((run) => run.status !== 'completed').length;
+              const failingCheckRuns = checkRuns.filter((run) =>
+                ['failure', 'cancelled', 'timed_out', 'action_required', 'startup_failure'].includes(run.conclusion),
+              ).length;
+              const totalChecks = status.data.statuses.length + checkRuns.length;
+              const pendingChecks = pendingStatuses + pendingCheckRuns;
+              const failingChecks = failingStatuses + failingCheckRuns;
+
+              const gate = evaluateVoteGate({
+                labels: labelNames,
+                author: fullPull.data.user.login,
+                createdAt: fullPull.data.created_at,
+                mergeableState: fullPull.data.mergeable_state ?? 'unknown',
+                checks: {
+                  passed: totalChecks > 0 && pendingChecks === 0 && failingChecks === 0,
+                  state: totalChecks === 0 ? 'missing' : pendingChecks > 0 ? 'pending' : failingChecks > 0 ? 'failing' : 'passed',
+                },
+                changedFiles: files.map((file) => file.filename),
+                votes: reactions.map((reaction) => ({
+                  user: reaction.user.login,
+                  userType: reaction.user.type,
+                  reaction: reaction.content,
+                  createdAt: reaction.created_at,
+                })),
+              });
+
+              core.info(`#${pull.number}: ${gate.canAutoMerge ? 'eligible for Worker auto-merge' : `held: ${gate.reasons.join(', ')}`}`);
             }

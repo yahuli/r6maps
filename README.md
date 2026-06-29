@@ -9,7 +9,7 @@ The app is intentionally built without a server:
 - `public/data/community/translations.json` stores community-editable map and marker translations.
 - `public/data/i18n/ui.json` stores UI text for the static app.
 - A Cloudflare Worker can turn community submissions into GitHub PRs. Without the Worker, GitHub Issues remain the fallback queue.
-- GitHub Actions validates data, builds the site, deploys Pages, and can merge low/medium-risk community PRs after qualified votes.
+- GitHub Actions validates data, builds the site, and deploys Pages. Cloudflare Worker Cron is the only automatic merge entry point for qualified low-risk community PRs.
 - Official map data is maintained manually by repository collaborators. Community IssueOps submissions do not modify `public/data/official/maps.json`.
 - Community proposal and review state lives in GitHub Issues and Pull Requests, not in static JSON under `public/data/community`.
 
@@ -56,9 +56,16 @@ SUBMISSION_API_BASE=https://r6maps-submissions.example.workers.dev
 
 The Pages workflow passes this value to Vite as `VITE_SUBMISSION_API_BASE`. If the repository variable is empty or the Worker call fails, the editor falls back to copying the payload and opening a short GitHub Issue URL.
 
-## Cloudflare Worker PR Submissions
+## Cloudflare Worker PR Submissions and Proposals
 
 The Worker in `worker/index.js` accepts editor submissions at `POST /api/submissions`, validates that only community marker files and marker-label translations are changed, then creates a branch, commit, and PR in `yahuli/r6maps` using a GitHub App installation token.
+
+It also exposes unauthenticated read-only proposal APIs:
+
+- `GET /api/proposals` lists open PRs labeled `community-data`.
+- `GET /api/proposals/:number` returns proposal detail, qualified vote totals, changed files, marker preview content, and marker diffs.
+
+Worker Cron runs hourly and is the only automatic merge path. It squash-merges only low-risk `community-data` PRs that touch allowed community data files, have passing checks, have been open for at least 24 hours, meet the qualified vote threshold, have no blocking labels, and are mergeable.
 
 Deploy with Wrangler after configuring secrets:
 
@@ -94,7 +101,7 @@ GitHub OAuth App:
 GitHub App:
 
 - Install it on `yahuli/r6maps`.
-- Repository permissions: Contents read/write, Pull requests read/write, Issues read/write for PR labels.
+- Repository permissions: Contents read/write, Pull requests read/write, Issues read/write for PR labels/comments/reactions, Checks read, Commit statuses read.
 - The Worker exchanges a signed GitHub App JWT for an installation access token on each submission.
 
 Security boundary:
@@ -110,12 +117,12 @@ Security boundary:
 1. A user edits markers in the web UI.
 2. The UI generates a patch for a per-map marker file, such as `public/data/community/markers/calypso-casino.json`.
 3. If `SUBMISSION_API_BASE` is configured, the UI posts the change set to the Cloudflare Worker.
-4. The Worker requires GitHub login, creates a PR with `community-data` and `risk-low`, and includes `Submitted by @login` in the body.
+4. The Worker requires GitHub login, creates a PR with `community-data` and a risk label, includes `Submitted by @login` in the body, and comments with the proposal preview URL.
 5. If the Worker is not configured or fails, the static app copies the full payload and opens a short GitHub issue with the `community-data` label.
-6. `CI` validates JSON data, tests vote rules, lints, and builds.
+6. `CI` validates JSON data, lints, and builds.
 7. Add or confirm a risk label: `risk-low`, `risk-medium`, or `risk-high`.
-8. `Vote Gate` counts qualified `+1` and `-1` reactions.
-9. Low and medium risk PRs can auto-merge when the threshold is met and protected files were not touched.
+8. Community reviewers vote with `+1` and `-1` reactions on the PR.
+9. Worker Cron can auto-merge low-risk PRs when the strict threshold is met. The `Vote Gate` GitHub Actions workflow is manual evaluation only and does not merge.
 
 High risk changes, official map data, workflows, scripts, dependencies, and app code require collaborator review and direct repository changes.
 

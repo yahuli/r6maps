@@ -1,5 +1,9 @@
 import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleDashed,
   Eye,
+  ExternalLink,
   FileJson,
   GitPullRequestArrow,
   Maximize2,
@@ -7,13 +11,29 @@ import {
   MousePointer2,
   Pencil,
   Plus,
+  RefreshCw,
   Trash2,
+  XCircle,
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { loadCommunityMarkers } from './lib/communityMarkers'
 import { createTranslator, localizeEntity } from './lib/i18n'
 import { buildChangeSetPatch, summarizePatchForPreview, type Patch } from './lib/prDraft'
+import {
+  buildProposalPreviewMarkers,
+  firstProposalMarker,
+  normalizeProposalDetail,
+  normalizeProposalList,
+  proposalDeletedGhostMarkers,
+  proposalMarkerDiffKindById,
+  type ProposalCheckState,
+  type ProposalDetail,
+  type ProposalMarkerDiffKind,
+  type ProposalRisk,
+  type ProposalSummary,
+  type ProposalVoteSummary,
+} from './lib/proposals'
 import {
   DEFAULT_SPLIT_VIEW,
   beginReferenceClick,
@@ -45,6 +65,15 @@ type MarkerGlyphData = Pick<CommunityMarker, 'type'> &
   >
 type ToolDragState = { type: MarkerType; pointerId: number }
 type DraftAction = 'add' | 'delete' | 'update'
+type AppRoute = { kind: 'viewer' } | { kind: 'proposal-list' } | { kind: 'proposal-detail'; number: number }
+type ProposalListState =
+  | { status: 'idle' | 'loading' | 'unavailable' }
+  | { status: 'ready'; proposals: ProposalSummary[] }
+  | { status: 'error'; message: string }
+type ProposalDetailState =
+  | { status: 'idle' | 'loading' | 'unavailable' }
+  | { status: 'ready'; detail: ProposalDetail }
+  | { status: 'error'; message: string }
 
 const MARKER_TOOLS: Array<{ type: MarkerType; labelKey: string }> = [
   { type: 'camera', labelKey: 'markerTypeCamera' },
@@ -131,7 +160,13 @@ function App() {
   const [submissionNotice, setSubmissionNotice] = useState('')
   const [createdPullRequestUrl, setCreatedPullRequestUrl] = useState('')
   const [submitPayloadPreview, setSubmitPayloadPreview] = useState('')
+  const [appRoute, setAppRoute] = useState<AppRoute>(() => parseAppHash(window.location.hash))
+  const [proposalListState, setProposalListState] = useState<ProposalListState>({ status: 'idle' })
+  const [proposalDetailState, setProposalDetailState] = useState<ProposalDetailState>({ status: 'idle' })
+  const [proposalListReloadKey, setProposalListReloadKey] = useState(0)
+  const [proposalDetailReloadKey, setProposalDetailReloadKey] = useState(0)
   const pendingAutoSubmissionAttempted = useRef(false)
+  const proposalInitialSelection = useRef<number | null>(null)
   const draftRef = useRef<DraftMarker>(draft)
 
   useEffect(() => {
@@ -160,43 +195,51 @@ function App() {
   }, [draft])
 
   useEffect(() => {
-    if (!dataLoaded || maps.length === 0) {
-      return
-    }
-
     function applyRouteFromHash() {
-      const route = parseViewerHash(window.location.hash)
-      const nextMap = route.mapId ? maps.find((map) => map.id === route.mapId) : undefined
-      const map = nextMap ?? maps.find((candidate) => candidate.id === 'calypso-casino') ?? maps[0]
-      const floorId = resolveRouteFloorId(map.floors, route.floorArg) ?? map.floors[0]?.id ?? '1f'
-
-      setSelectedMapId(map.id)
-      setSelectedFloorId(floorId)
-      setEditMode(route.mode === 'edit' && !isCompact)
-      setSelectedMarkerId('')
-      setDraftAction('add')
-      setPendingAddDraft(null)
-      setPendingDeleteMarkerIds([])
-      setUpdatingMarkerId(null)
-      setPendingMarkerUpdates({})
-      setSubmitPayloadPreview('')
-
-      if (route.mode === 'edit' && isCompact) {
-        const viewHash = buildViewerHash(map.id, floorId, 'view')
-        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${viewHash}`)
-      }
+      setAppRoute(parseAppHash(window.location.hash))
     }
 
     applyRouteFromHash()
     window.addEventListener('hashchange', applyRouteFromHash)
 
     return () => window.removeEventListener('hashchange', applyRouteFromHash)
-  }, [dataLoaded, isCompact, maps])
+  }, [])
+
+  useEffect(() => {
+    if (appRoute.kind !== 'viewer' || !dataLoaded || maps.length === 0) {
+      return
+    }
+
+    const route = parseViewerHash(window.location.hash)
+    const nextMap = route.mapId ? maps.find((map) => map.id === route.mapId) : undefined
+    const map = nextMap ?? maps.find((candidate) => candidate.id === 'calypso-casino') ?? maps[0]
+    const floorId = resolveRouteFloorId(map.floors, route.floorArg) ?? map.floors[0]?.id ?? '1f'
+
+    setSelectedMapId(map.id)
+    setSelectedFloorId(floorId)
+    setEditMode(route.mode === 'edit' && !isCompact)
+    setSelectedMarkerId('')
+    setDraftAction('add')
+    setPendingAddDraft(null)
+    setPendingDeleteMarkerIds([])
+    setUpdatingMarkerId(null)
+    setPendingMarkerUpdates({})
+    setSubmitPayloadPreview('')
+
+    if (route.mode === 'edit' && isCompact) {
+      const viewHash = buildViewerHash(map.id, floorId, 'view')
+      window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${viewHash}`)
+    }
+  }, [appRoute, dataLoaded, isCompact, maps])
 
   const selectedMap = maps.find((map) => map.id === selectedMapId) ?? maps[0]
   const selectedFloor = selectedMap?.floors.find((floor) => floor.id === selectedFloorId) ?? selectedMap?.floors[0]
   const t = useMemo(() => createTranslator(uiMessages, selectedLocale), [selectedLocale, uiMessages])
-  const canEdit = editMode && !isCompact
+  const isProposalListRoute = appRoute.kind === 'proposal-list'
+  const isProposalDetailRoute = appRoute.kind === 'proposal-detail'
+  const isProposalRoute = isProposalListRoute || isProposalDetailRoute
+  const activeProposalNumber = appRoute.kind === 'proposal-detail' ? appRoute.number : null
+  const canEdit = appRoute.kind === 'viewer' && editMode && !isCompact
   const panelFloorIds = useMemo(
     () => (selectedMap && selectedFloor ? getPanelFloorIds(selectedMap.floors, selectedFloor.id, splitView) : []),
     [selectedFloor, selectedMap, splitView],
@@ -276,6 +319,31 @@ function App() {
     .replace('{update}', String(pendingUpdateCount))
     .replace('{delete}', String(pendingDeleteCount))
   const languageOptions = locales.length > 0 ? locales : [{ id: 'en', name: 'English', nativeName: 'English' }]
+  const currentViewerHash =
+    selectedMap && selectedFloor ? buildViewerHash(selectedMap.id, selectedFloor.id, 'view') : '#calypso-casino/1/all'
+  const activeProposalDetail =
+    proposalDetailState.status === 'ready' && proposalDetailState.detail.number === activeProposalNumber
+      ? proposalDetailState.detail
+      : null
+  const proposalPreviewMarkers = useMemo(
+    () => (activeProposalDetail ? buildProposalPreviewMarkers(markers, activeProposalDetail) : []),
+    [activeProposalDetail, markers],
+  )
+  const proposalDeletedMarkers = useMemo(
+    () => (activeProposalDetail ? proposalDeletedGhostMarkers(activeProposalDetail) : []),
+    [activeProposalDetail],
+  )
+  const proposalDiffKindByMarkerId = useMemo(
+    () => (activeProposalDetail ? proposalMarkerDiffKindById(activeProposalDetail) : new Map<string, ProposalMarkerDiffKind>()),
+    [activeProposalDetail],
+  )
+  const proposalVisibleMarkers = useMemo(
+    () =>
+      [...proposalPreviewMarkers, ...proposalDeletedMarkers].filter(
+        (marker) => marker.mapId === selectedMap?.id && panelFloorIds.includes(marker.floorId),
+      ),
+    [panelFloorIds, proposalDeletedMarkers, proposalPreviewMarkers, selectedMap?.id],
+  )
   const submitPayloadToApi = useCallback(
     async (payload: IssueOpsPayload, options: { redirectOnAuth: boolean }) => {
       setSubmitting(true)
@@ -324,6 +392,100 @@ function App() {
     },
     [submissionApiBase, t],
   )
+
+  useEffect(() => {
+    if (!isProposalListRoute) {
+      return
+    }
+
+    if (!submissionApiBase) {
+      setProposalListState({ status: 'unavailable' })
+      return
+    }
+
+    const controller = new AbortController()
+
+    setProposalListState({ status: 'loading' })
+    void fetch(apiUrl(submissionApiBase, '/api/proposals'), { signal: controller.signal })
+      .then(async (response) => {
+        const body = await readJsonResponse<unknown>(response)
+
+        if (!response.ok) {
+          throw new Error(`Proposal API failed with status ${response.status}`)
+        }
+
+        setProposalListState({ status: 'ready', proposals: normalizeProposalList(body) })
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setProposalListState({ status: 'error', message: errorMessage(error) })
+      })
+
+    return () => controller.abort()
+  }, [isProposalListRoute, proposalListReloadKey, submissionApiBase])
+
+  useEffect(() => {
+    if (activeProposalNumber === null) {
+      return
+    }
+
+    proposalInitialSelection.current = null
+
+    if (!submissionApiBase) {
+      setProposalDetailState({ status: 'unavailable' })
+      return
+    }
+
+    const controller = new AbortController()
+
+    setProposalDetailState({ status: 'loading' })
+    void fetch(apiUrl(submissionApiBase, `/api/proposals/${activeProposalNumber}`), { signal: controller.signal })
+      .then(async (response) => {
+        const body = await readJsonResponse<unknown>(response)
+
+        if (!response.ok) {
+          throw new Error(`Proposal API failed with status ${response.status}`)
+        }
+
+        const detail = normalizeProposalDetail(body)
+        if (!detail) {
+          throw new Error('Proposal API returned an unsupported detail shape')
+        }
+
+        setProposalDetailState({ status: 'ready', detail })
+      })
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        setProposalDetailState({ status: 'error', message: errorMessage(error) })
+      })
+
+    return () => controller.abort()
+  }, [activeProposalNumber, proposalDetailReloadKey, submissionApiBase])
+
+  useEffect(() => {
+    if (!activeProposalDetail || maps.length === 0 || proposalInitialSelection.current === activeProposalDetail.number) {
+      return
+    }
+
+    proposalInitialSelection.current = activeProposalDetail.number
+
+    const marker = firstProposalMarker(activeProposalDetail)
+    const map = marker ? maps.find((candidate) => candidate.id === marker.mapId) : undefined
+    if (!marker || !map) {
+      return
+    }
+
+    setSelectedMapId(map.id)
+    setSelectedFloorId(map.floors.find((floor) => floor.id === marker.floorId)?.id ?? map.floors[0]?.id ?? '1f')
+    setSelectedMarkerId(marker.id)
+    resetViewerTransform()
+  }, [activeProposalDetail, maps])
 
   useEffect(() => {
     if (selectedMap && selectedFloor && draftAction !== 'update') {
@@ -377,7 +539,7 @@ function App() {
   }, [draggingTool])
 
   useEffect(() => {
-    if (!dataLoaded || !selectedMap || !selectedFloor) {
+    if (appRoute.kind !== 'viewer' || !dataLoaded || !selectedMap || !selectedFloor) {
       return
     }
 
@@ -386,7 +548,7 @@ function App() {
     if (window.location.hash !== nextHash) {
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${nextHash}`)
     }
-  }, [canEdit, dataLoaded, selectedFloor, selectedMap])
+  }, [appRoute.kind, canEdit, dataLoaded, selectedFloor, selectedMap])
 
   useEffect(() => {
     if (!dataLoaded) {
@@ -672,79 +834,86 @@ function App() {
     window.setTimeout(() => setCopied(false), 1600)
   }
 
+  const shellClassName = [
+    'app-shell',
+    canEdit ? 'editor-active' : isProposalListRoute ? 'proposal-list-active' : isProposalDetailRoute ? 'proposal-preview-active' : 'viewer-active',
+  ].join(' ')
+
   return (
-    <div className={canEdit ? 'app-shell editor-active' : 'app-shell viewer-active'}>
+    <div className={shellClassName}>
       <header className="topbar">
         <div className="brand">
           <div className="brand-mark">R6</div>
           <div>
             <h1>R6Maps</h1>
-            <p>{canEdit ? t('editInformation') : t('viewMode')}</p>
+            <p>{isProposalListRoute ? t('proposals') : isProposalDetailRoute ? t('proposalPreview') : canEdit ? t('editInformation') : t('viewMode')}</p>
           </div>
         </div>
 
-        <div className="viewer-controls" aria-label="Map controls">
-          <label className="compact-select">
-            <span>{t('officialMaps')}</span>
-            <select value={selectedMap?.id ?? ''} onChange={(event) => handleMapSelect(event.target.value)}>
-              {maps.map((map) => (
-                <option key={map.id} value={map.id}>
-                  {localizeEntity({
-                    entityType: 'map',
-                    entityId: map.id,
-                    field: 'name',
-                    fallback: map.name,
-                    locale: selectedLocale,
-                    translations,
-                  })}
-                </option>
+        {!isProposalListRoute && (
+          <div className="viewer-controls" aria-label="Map controls">
+            <label className="compact-select">
+              <span>{t('officialMaps')}</span>
+              <select value={selectedMap?.id ?? ''} onChange={(event) => handleMapSelect(event.target.value)}>
+                {maps.map((map) => (
+                  <option key={map.id} value={map.id}>
+                    {localizeEntity({
+                      entityType: 'map',
+                      entityId: map.id,
+                      field: 'name',
+                      fallback: map.name,
+                      locale: selectedLocale,
+                      translations,
+                    })}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="toolbar-controls floor-controls" aria-label="Floor controls">
+              {selectedMap?.floors.map((floor) => (
+                <button
+                  className={floor.id === selectedFloor?.id ? 'segmented selected' : 'segmented'}
+                  key={floor.id}
+                  type="button"
+                  onClick={() => handleFloorSelect(floor.id)}
+                >
+                  {floor.name}
+                </button>
               ))}
-            </select>
-          </label>
+            </div>
 
-          <div className="toolbar-controls floor-controls" aria-label="Floor controls">
-            {selectedMap?.floors.map((floor) => (
-              <button
-                className={floor.id === selectedFloor?.id ? 'segmented selected' : 'segmented'}
-                key={floor.id}
-                type="button"
-                onClick={() => handleFloorSelect(floor.id)}
-              >
-                {floor.name}
+            <button
+              className={splitView ? 'segmented selected' : 'segmented'}
+              type="button"
+              onClick={() => setSplitView((current) => !current)}
+            >
+              {splitView ? t('splitView') : t('singleView')}
+            </button>
+
+            <div className="zoom-controls" aria-label="Zoom controls">
+              <button className="icon-button" type="button" title={t('zoomOut')} onClick={() => zoomBy(-0.15)}>
+                <Minus size={16} />
               </button>
-            ))}
+              <input
+                aria-label="Zoom"
+                max="5"
+                min="0.45"
+                step="0.05"
+                type="range"
+                value={viewerTransform.scale}
+                onInput={handleZoomInput}
+                onChange={handleZoomInput}
+              />
+              <button className="icon-button" type="button" title={t('zoomIn')} onClick={() => zoomBy(0.15)}>
+                <Plus size={16} />
+              </button>
+              <button className="icon-button" type="button" title={t('resetView')} onClick={resetViewerTransform}>
+                <Maximize2 size={16} />
+              </button>
+            </div>
           </div>
-
-          <button
-            className={splitView ? 'segmented selected' : 'segmented'}
-            type="button"
-            onClick={() => setSplitView((current) => !current)}
-          >
-            {splitView ? t('splitView') : t('singleView')}
-          </button>
-
-          <div className="zoom-controls" aria-label="Zoom controls">
-            <button className="icon-button" type="button" title={t('zoomOut')} onClick={() => zoomBy(-0.15)}>
-              <Minus size={16} />
-            </button>
-            <input
-              aria-label="Zoom"
-              max="5"
-              min="0.45"
-              step="0.05"
-              type="range"
-              value={viewerTransform.scale}
-              onInput={handleZoomInput}
-              onChange={handleZoomInput}
-            />
-            <button className="icon-button" type="button" title={t('zoomIn')} onClick={() => zoomBy(0.15)}>
-              <Plus size={16} />
-            </button>
-            <button className="icon-button" type="button" title={t('resetView')} onClick={resetViewerTransform}>
-              <Maximize2 size={16} />
-            </button>
-          </div>
-        </div>
+        )}
 
         <div className="topbar-actions" aria-label="Global actions">
           <label className="language-select">
@@ -757,13 +926,26 @@ function App() {
               ))}
             </select>
           </label>
-          {!canEdit && !isCompact && (
+          {isProposalRoute ? (
+            <a className="primary-button secondary-button" href={currentViewerHash}>
+              <Eye size={17} />
+              {t('viewMap')}
+            </a>
+          ) : (
+            !canEdit && (
+              <a className="primary-button secondary-button" href="#/proposals">
+                <GitPullRequestArrow size={17} />
+                {t('proposals')}
+              </a>
+            )
+          )}
+          {!isProposalRoute && !canEdit && !isCompact && (
             <button className="primary-button" type="button" onClick={() => setEditMode(true)}>
               <Pencil size={17} />
               {t('githubEdit')}
             </button>
           )}
-          {canEdit && (
+          {!isProposalRoute && canEdit && (
             <button className="primary-button" type="button" onClick={() => setEditMode(false)}>
               <Eye size={17} />
               {t('viewMode')}
@@ -772,8 +954,42 @@ function App() {
         </div>
       </header>
 
-      <main className={canEdit ? 'workspace editing' : 'workspace viewing'}>
-        <section className="map-stage" aria-label="Map viewer and editor">
+      <main className={isProposalListRoute ? 'proposal-list-page' : isProposalDetailRoute ? 'workspace proposal-preview' : canEdit ? 'workspace editing' : 'workspace viewing'}>
+        {isProposalListRoute ? (
+          <ProposalListPage
+            state={proposalListState}
+            t={t}
+            onRefresh={() => setProposalListReloadKey((current) => current + 1)}
+          />
+        ) : isProposalDetailRoute ? (
+          <ProposalPreviewWorkspace
+            detailState={proposalDetailState}
+            diffKindByMarkerId={proposalDiffKindByMarkerId}
+            isSplitLayout={isSplitLayout}
+            panelFloorIds={panelFloorIds}
+            proposalMarkers={proposalVisibleMarkers}
+            selectedFloor={selectedFloor}
+            selectedLocale={selectedLocale}
+            selectedMap={selectedMap}
+            selectedMapName={selectedMapName}
+            selectedMarkerId={selectedMarkerId}
+            showOfficialLayer={showOfficialLayer}
+            sourceLabel={sourceLabel}
+            t={t}
+            transform={viewerTransform}
+            translations={translations}
+            onMarkerSelect={setSelectedMarkerId}
+            onPanMove={movePan}
+            onPanStart={startPan}
+            onPanStop={stopPan}
+            onReferencePointChange={setReferencePoint}
+            onRefresh={() => setProposalDetailReloadKey((current) => current + 1)}
+            onWheelZoom={(delta) => zoomBy(delta)}
+            referencePoint={referencePoint}
+          />
+        ) : (
+          <>
+            <section className="map-stage" aria-label="Map viewer and editor">
           <div className={isSplitLayout ? 'map-panes split' : 'map-panes'}>
             {panelFloorIds.map((floorId) => {
               const floor = selectedMap?.floors.find((candidate) => candidate.id === floorId)
@@ -1023,7 +1239,377 @@ function App() {
             </section>
           </aside>
         )}
+          </>
+        )}
       </main>
+    </div>
+  )
+}
+
+function noop() {}
+
+function ProposalListPage({
+  state,
+  t,
+  onRefresh,
+}: {
+  state: ProposalListState
+  t: (key: string) => string
+  onRefresh: () => void
+}) {
+  return (
+    <section className="proposal-list-shell" aria-label={t('proposals')}>
+      <div className="proposal-page-header">
+        <div>
+          <h2>{t('proposals')}</h2>
+          <p>{t('proposalsDescription')}</p>
+        </div>
+        <button className="primary-button secondary-button" type="button" onClick={onRefresh}>
+          <RefreshCw size={16} />
+          {t('refresh')}
+        </button>
+      </div>
+
+      {state.status === 'unavailable' && (
+        <ProposalEmptyState
+          icon={<AlertTriangle size={22} />}
+          title={t('proposalApiUnavailableTitle')}
+          message={t('proposalApiUnavailableMessage')}
+        />
+      )}
+      {state.status === 'loading' && (
+        <ProposalEmptyState icon={<CircleDashed size={22} />} title={t('loadingProposals')} message={t('loadingRepositoryData')} />
+      )}
+      {state.status === 'error' && (
+        <ProposalEmptyState icon={<XCircle size={22} />} title={t('proposalApiErrorTitle')} message={state.message || t('proposalApiErrorMessage')} />
+      )}
+      {state.status === 'ready' && state.proposals.length === 0 && (
+        <ProposalEmptyState icon={<GitPullRequestArrow size={22} />} title={t('noProposalsTitle')} message={t('noProposalsMessage')} />
+      )}
+      {state.status === 'ready' && state.proposals.length > 0 && (
+        <div className="proposal-list">
+          {state.proposals.map((proposal) => (
+            <article className="proposal-card" key={proposal.number}>
+              <div className="proposal-card-main">
+                <div className="proposal-title-row">
+                  <span className="proposal-number">#{proposal.number}</span>
+                  <h3>{proposal.title}</h3>
+                </div>
+                <div className="proposal-meta">
+                  <span>{t('proposalAuthor').replace('{author}', proposal.author)}</span>
+                  <span>{t('proposalFilesChanged').replace('{count}', String(proposal.changedFileCount))}</span>
+                  {proposal.updatedAt && <span>{formatProposalDate(proposal.updatedAt)}</span>}
+                </div>
+                <div className="proposal-badges">
+                  <span className={`risk-badge ${proposal.risk}`}>{proposalRiskLabel(proposal.risk, t)}</span>
+                  <span className={`check-badge ${proposal.checkState}`}>
+                    <ProposalCheckIcon state={proposal.checkState} />
+                    {proposalCheckLabel(proposal.checkState, t)}
+                  </span>
+                  <span className="vote-pill">{formatProposalVotes(proposal.votes, t)}</span>
+                </div>
+              </div>
+              <div className="proposal-actions">
+                <a className="primary-button" href={proposalDetailHash(proposal.number)}>
+                  <Eye size={16} />
+                  {t('preview')}
+                </a>
+                {proposal.githubUrl && (
+                  <a className="primary-button secondary-button" href={proposal.githubUrl} rel="noreferrer" target="_blank">
+                    <ExternalLink size={16} />
+                    GitHub
+                  </a>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function ProposalPreviewWorkspace({
+  detailState,
+  diffKindByMarkerId,
+  isSplitLayout,
+  panelFloorIds,
+  proposalMarkers,
+  selectedFloor,
+  selectedLocale,
+  selectedMap,
+  selectedMapName,
+  selectedMarkerId,
+  showOfficialLayer,
+  sourceLabel,
+  t,
+  transform,
+  translations,
+  referencePoint,
+  onMarkerSelect,
+  onPanMove,
+  onPanStart,
+  onPanStop,
+  onReferencePointChange,
+  onRefresh,
+  onWheelZoom,
+}: {
+  detailState: ProposalDetailState
+  diffKindByMarkerId: Map<string, ProposalMarkerDiffKind>
+  isSplitLayout: boolean
+  panelFloorIds: string[]
+  proposalMarkers: CommunityMarker[]
+  selectedFloor?: OfficialMap['floors'][number]
+  selectedLocale: string
+  selectedMap?: OfficialMap
+  selectedMapName: string
+  selectedMarkerId: string
+  showOfficialLayer: boolean
+  sourceLabel: string
+  t: (key: string) => string
+  transform: { scale: number; x: number; y: number }
+  translations: TranslationEntry[]
+  referencePoint: ReferencePoint | null
+  onMarkerSelect: (markerId: string) => void
+  onPanMove: (event: React.PointerEvent<SVGSVGElement>) => void
+  onPanStart: (event: React.PointerEvent<SVGSVGElement>) => void
+  onPanStop: (event: React.PointerEvent<SVGSVGElement>) => void
+  onReferencePointChange: (point: ReferencePoint | null) => void
+  onRefresh: () => void
+  onWheelZoom: (delta: number) => void
+}) {
+  const previewDraft: DraftMarker = {
+    mapId: selectedMap?.id ?? '',
+    floorId: selectedFloor?.id ?? '',
+    type: 'camera',
+    label: '',
+    x: 0.5,
+    y: 0.5,
+  }
+
+  return (
+    <>
+      <section className="map-stage proposal-map-stage" aria-label={t('proposalPreview')}>
+        <div className={isSplitLayout ? 'map-panes split' : 'map-panes'}>
+          {panelFloorIds.map((floorId) => {
+            const floor = selectedMap?.floors.find((candidate) => candidate.id === floorId)
+            const paneMarkers = proposalMarkers.filter((marker) => marker.floorId === floorId)
+
+            return (
+              <MapPane
+                activeToolPointerId={null}
+                activeToolType={null}
+                canEdit={false}
+                draft={previewDraft}
+                draggingDraft={false}
+                floor={floor}
+                ghostedMarkerId={null}
+                isSelectedFloor={floor?.id === selectedFloor?.id}
+                key={floorId}
+                mapId={selectedMap?.id ?? ''}
+                markers={paneMarkers}
+                referencePoint={referencePoint}
+                selectedMarkerId={selectedMarkerId}
+                showOfficialLayer={showOfficialLayer}
+                t={t}
+                transform={transform}
+                getMarkerDiffKind={(marker) => diffKindByMarkerId.get(marker.id)}
+                getMarkerLabel={(marker) =>
+                  localizeEntity({
+                    entityType: 'marker',
+                    entityId: marker.id,
+                    field: 'label',
+                    fallback: marker.label,
+                    locale: selectedLocale,
+                    translations,
+                  })
+                }
+                onDraftDragMove={noop}
+                onDraftDragStart={noop}
+                onDraftDragStop={noop}
+                onDraftLabelChange={noop}
+                onDropTool={noop}
+                onMarkerDragStart={noop}
+                onMarkerSelect={onMarkerSelect}
+                onPanMove={onPanMove}
+                onPanStart={onPanStart}
+                onPanStop={onPanStop}
+                onReferencePointChange={onReferencePointChange}
+                onToolDragEnd={noop}
+                onWheelZoom={onWheelZoom}
+              />
+            )
+          })}
+        </div>
+
+        <div className="status-strip">
+          <span>{selectedMapName || t('loadingRepositoryData')}</span>
+          <span>{selectedFloor?.name ?? t('noFloorSelected')}</span>
+          <span>{sourceLabel}</span>
+          <span>
+            {proposalMarkers.length} {t('proposalPreviewMarkers')}
+          </span>
+          <span>{t('proposalDiffLegend')}</span>
+        </div>
+      </section>
+
+      <aside className="inspector proposal-inspector" aria-label={t('proposalDetails')}>
+        <ProposalDetailPanel state={detailState} t={t} onMarkerSelect={onMarkerSelect} onRefresh={onRefresh} />
+      </aside>
+    </>
+  )
+}
+
+function ProposalDetailPanel({
+  onMarkerSelect,
+  state,
+  t,
+  onRefresh,
+}: {
+  onMarkerSelect: (markerId: string) => void
+  state: ProposalDetailState
+  t: (key: string) => string
+  onRefresh: () => void
+}) {
+  if (state.status === 'unavailable') {
+    return (
+      <section className="panel proposal-detail-panel">
+        <ProposalEmptyState
+          icon={<AlertTriangle size={22} />}
+          title={t('proposalApiUnavailableTitle')}
+          message={t('proposalApiUnavailableMessage')}
+        />
+      </section>
+    )
+  }
+
+  if (state.status === 'loading' || state.status === 'idle') {
+    return (
+      <section className="panel proposal-detail-panel">
+        <ProposalEmptyState icon={<CircleDashed size={22} />} title={t('loadingProposal')} message={t('loadingRepositoryData')} />
+      </section>
+    )
+  }
+
+  if (state.status === 'error') {
+    return (
+      <section className="panel proposal-detail-panel">
+        <ProposalEmptyState icon={<XCircle size={22} />} title={t('proposalApiErrorTitle')} message={state.message || t('proposalApiErrorMessage')} />
+        <button className="primary-button proposal-wide-button" type="button" onClick={onRefresh}>
+          <RefreshCw size={16} />
+          {t('refresh')}
+        </button>
+      </section>
+    )
+  }
+
+  if (state.status !== 'ready') {
+    return null
+  }
+
+  const detail = state.detail
+
+  return (
+    <>
+      <section className="panel proposal-detail-panel">
+        <div className="panel-title">
+          <GitPullRequestArrow size={16} />
+          {t('proposalDetails')}
+        </div>
+        <div className="proposal-detail-header">
+          <span className="proposal-number">#{detail.number}</span>
+          <h2>{detail.title}</h2>
+          <p>{t('proposalAuthor').replace('{author}', detail.author)}</p>
+        </div>
+        <div className="proposal-badges detail-badges">
+          <span className={`risk-badge ${detail.risk}`}>{proposalRiskLabel(detail.risk, t)}</span>
+          <span className={`check-badge ${detail.checkState}`}>
+            <ProposalCheckIcon state={detail.checkState} />
+            {proposalCheckLabel(detail.checkState, t)}
+          </span>
+          <span className="vote-pill">{formatProposalVotes(detail.votes, t)}</span>
+        </div>
+        <div className="proposal-detail-actions">
+          <button className="primary-button secondary-button" type="button" onClick={onRefresh}>
+            <RefreshCw size={16} />
+            {t('refresh')}
+          </button>
+          {detail.githubUrl && (
+            <a className="primary-button secondary-button" href={detail.githubUrl} rel="noreferrer" target="_blank">
+              <ExternalLink size={16} />
+              GitHub
+            </a>
+          )}
+        </div>
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <FileJson size={16} />
+          {t('changedFiles')}
+        </div>
+        {detail.changedFiles.length > 0 ? (
+          <div className="changed-file-list">
+            {detail.changedFiles.map((file) => (
+              <div className="changed-file-row" key={`${file.path}:${file.status}`}>
+                <span>{file.path}</span>
+                <small>
+                  {file.status || t('changed')}
+                  {file.additions !== undefined || file.deletions !== undefined
+                    ? ` +${file.additions ?? 0} / -${file.deletions ?? 0}`
+                    : ''}
+                </small>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="muted">{t('noChangedFiles')}</p>
+        )}
+      </section>
+
+      <section className="panel">
+        <div className="panel-title">
+          <MousePointer2 size={16} />
+          {t('markerDiff')}
+        </div>
+        <div className="proposal-diff-legend">
+          <span className="legend-added">{t('diffAdded')}</span>
+          <span className="legend-updated">{t('diffUpdated')}</span>
+          <span className="legend-deleted">{t('diffDeleted')}</span>
+        </div>
+        {detail.markerDiffs.length > 0 ? (
+          <div className="marker-diff-list">
+            {detail.markerDiffs.map((diff) => {
+              const marker = diff.after ?? diff.before
+
+              return (
+                <button
+                  className={`marker-diff-row ${diff.kind}`}
+                  key={`${diff.kind}:${diff.markerId}`}
+                  type="button"
+                  onClick={() => marker && onMarkerSelect(marker.id)}
+                >
+                  <span>{proposalDiffLabel(diff.kind, t)}</span>
+                  <strong>{marker ? formatMarkerDisplayLabel(marker, marker.label, t) : diff.markerId}</strong>
+                  {marker && <small>{`${marker.mapId} / ${marker.floorId}`}</small>}
+                </button>
+              )
+            })}
+          </div>
+        ) : (
+          <p className="muted">{t('noMarkerDiff')}</p>
+        )}
+      </section>
+    </>
+  )
+}
+
+function ProposalEmptyState({ icon, title, message }: { icon: ReactNode; title: string; message: string }) {
+  return (
+    <div className="proposal-empty-state">
+      {icon}
+      <strong>{title}</strong>
+      <p>{message}</p>
     </div>
   )
 }
@@ -1037,6 +1623,7 @@ function MapPane({
   floor,
   ghostedMarkerId,
   getMarkerLabel,
+  getMarkerDiffKind,
   isSelectedFloor,
   mapId,
   markers,
@@ -1067,6 +1654,7 @@ function MapPane({
   floor?: { id: string; name: string; image?: string; sort: number }
   ghostedMarkerId: string | null
   getMarkerLabel: (marker: CommunityMarker) => string
+  getMarkerDiffKind?: (marker: CommunityMarker) => ProposalMarkerDiffKind | undefined
   isSelectedFloor: boolean
   mapId: string
   markers: CommunityMarker[]
@@ -1213,6 +1801,7 @@ function MapPane({
               label={getMarkerLabel(marker)}
               selected={marker.id === selectedMarkerId}
               ghosted={marker.id === ghostedMarkerId}
+              diffKind={getMarkerDiffKind?.(marker)}
               t={t}
               onDragStart={
                 canEdit && floor
@@ -1652,6 +2241,7 @@ function BlueprintRooms({ floor, showOfficialLayer }: { floor?: { image?: string
 }
 
 function MarkerNode({
+  diffKind,
   ghosted = false,
   marker,
   label,
@@ -1660,6 +2250,7 @@ function MarkerNode({
   onDragStart,
   onSelect,
 }: {
+  diffKind?: ProposalMarkerDiffKind
   ghosted?: boolean
   marker: CommunityMarker
   label: string
@@ -1675,6 +2266,7 @@ function MarkerNode({
     marker.type,
     selected ? 'selected' : '',
     ghosted ? 'drag-source-ghost' : '',
+    diffKind ? `proposal-marker-${diffKind}` : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -1885,6 +2477,100 @@ function submissionApiBaseUrl() {
 
 function apiUrl(baseUrl: string, path: string) {
   return `${baseUrl}${path}`
+}
+
+function parseAppHash(hash: string): AppRoute {
+  const parts = hash
+    .replace(/^#/, '')
+    .replace(/^\/+/, '')
+    .split('/')
+    .filter(Boolean)
+
+  if (parts[0] !== 'proposals') {
+    return { kind: 'viewer' }
+  }
+
+  const number = Number(parts[1])
+
+  return Number.isInteger(number) && number > 0 ? { kind: 'proposal-detail', number } : { kind: 'proposal-list' }
+}
+
+function proposalDetailHash(number: number) {
+  return `#/proposals/${number}`
+}
+
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unexpected proposal API error'
+}
+
+function proposalRiskLabel(risk: ProposalRisk, t: (key: string) => string) {
+  if (risk === 'low') {
+    return t('proposalRiskLow')
+  }
+  if (risk === 'medium') {
+    return t('proposalRiskMedium')
+  }
+  if (risk === 'high') {
+    return t('proposalRiskHigh')
+  }
+
+  return t('proposalRiskUnknown')
+}
+
+function proposalCheckLabel(state: ProposalCheckState, t: (key: string) => string) {
+  if (state === 'passing') {
+    return t('proposalChecksPassing')
+  }
+  if (state === 'pending') {
+    return t('proposalChecksPending')
+  }
+  if (state === 'failing') {
+    return t('proposalChecksFailing')
+  }
+
+  return t('proposalChecksUnknown')
+}
+
+function ProposalCheckIcon({ state }: { state: ProposalCheckState }) {
+  if (state === 'passing') {
+    return <CheckCircle2 size={15} />
+  }
+  if (state === 'failing') {
+    return <XCircle size={15} />
+  }
+  if (state === 'pending') {
+    return <CircleDashed size={15} />
+  }
+
+  return <AlertTriangle size={15} />
+}
+
+function formatProposalVotes(votes: ProposalVoteSummary, t: (key: string) => string) {
+  return t('proposalVotes')
+    .replace('{up}', String(votes.up))
+    .replace('{down}', String(votes.down))
+    .replace('{net}', String(votes.net))
+}
+
+function proposalDiffLabel(kind: ProposalMarkerDiffKind, t: (key: string) => string) {
+  if (kind === 'added') {
+    return t('diffAdded')
+  }
+  if (kind === 'updated') {
+    return t('diffUpdated')
+  }
+
+  return t('diffDeleted')
+}
+
+function formatProposalDate(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
 function buildIssueOpsPayload(patch: Patch): IssueOpsPayload {

@@ -2,6 +2,9 @@ name = "r6maps-submissions"
 main = "worker/index.js"
 compatibility_date = "2026-06-29"
 
+[triggers]
+crons = ["17 * * * *"]
+
 [vars]
 GITHUB_OWNER = "yahuli"
 GITHUB_REPO = "r6maps"

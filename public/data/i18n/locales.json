@@ -1,0 +1,57 @@
+[
+  {
+    "id": "en",
+    "name": "English",
+    "nativeName": "English"
+  },
+  {
+    "id": "zh-CN",
+    "name": "Chinese Simplified",
+    "nativeName": "简体中文"
+  },
+  {
+    "id": "zh-TW",
+    "name": "Chinese Traditional",
+    "nativeName": "繁體中文"
+  },
+  {
+    "id": "ja-JP",
+    "name": "Japanese",
+    "nativeName": "日本語"
+  },
+  {
+    "id": "ko-KR",
+    "name": "Korean",
+    "nativeName": "한국어"
+  },
+  {
+    "id": "fr-FR",
+    "name": "French",
+    "nativeName": "Français"
+  },
+  {
+    "id": "de-DE",
+    "name": "German",
+    "nativeName": "Deutsch"
+  },
+  {
+    "id": "es-ES",
+    "name": "Spanish",
+    "nativeName": "Español"
+  },
+  {
+    "id": "pt-BR",
+    "name": "Portuguese (Brazil)",
+    "nativeName": "Português (Brasil)"
+  },
+  {
+    "id": "it-IT",
+    "name": "Italian",
+    "nativeName": "Italiano"
+  },
+  {
+    "id": "pl-PL",
+    "name": "Polish",
+    "nativeName": "Polski"
+  }
+]

@@ -1,0 +1,1012 @@
+[
+  {
+    "id": "bank",
+    "name": "Bank",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/bank",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-bank-blueprints.zip",
+      "checksum": "sha256:eb45a052aad23dc29b8db53e8c89461937239789ab9861f1906f03475ad4de69",
+      "lastModified": "2026-06-26T00:00:00.000Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/bank/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/bank/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/bank/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/bank/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "border",
+    "name": "Border",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/border",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-border-blueprints.zip",
+      "checksum": "482e90837256cb17d386717500fb26348fcf36ebb59f780f371d047dda4b8486",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/border/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/border/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/border/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "calypso-casino",
+    "name": "Calypso Casino",
+    "status": "official",
+    "season": "Y10S2",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/calypso-casino",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-calypso-casino-blueprints.zip",
+      "checksum": "c6c4829e2fe2be86e1d33569e509d6215893177aff2f80483002ab7ac10a9f6e",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/calypso-casino/b1.png"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/calypso-casino/1f.png"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/calypso-casino/2f.png"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/calypso-casino/roof.png"
+      }
+    ]
+  },
+  {
+    "id": "chalet",
+    "name": "Chalet",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/chalet",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-chalet-blueprints.zip",
+      "checksum": "29f0af3794cda0f39c6368e921227f3f56a26af747c3fb14914bc814c303e6fc",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/chalet/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/chalet/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/chalet/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/chalet/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "close-quarter",
+    "name": "Close Quarter",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/close-quarter",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-closequarter-blueprints_june22.zip",
+      "checksum": "96fa92f2460fa2575c0872a0a439668d439c474062eb424d344587be3f149672",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/close-quarter/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/close-quarter/2f.jpg"
+      }
+    ]
+  },
+  {
+    "id": "clubhouse",
+    "name": "Clubhouse",
+    "status": "official",
+    "season": "Y1S0",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/clubhouse",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-clubhouse-blueprints.zip",
+      "checksum": "demo-clubhouse-zip",
+      "lastModified": "2026-05-19T16:08:55.000Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "coastline",
+    "name": "Coastline",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/coastline",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-coastline-blueprints.zip",
+      "checksum": "b074d5be5a3d90d19522adcc5ef911e1671a18b3743bc361a10c552dca571814",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/coastline/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/coastline/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/coastline/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "consulate",
+    "name": "Consulate",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/consulate",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-consulate-blueprints_may23.zip",
+      "checksum": "504e65f4471d443e82227d74eed2e22bbba7a7eccad992fdfd99a9ea9ebb1629",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/consulate/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/consulate/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/consulate/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/consulate/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "emerald-plains",
+    "name": "Emerald Plains",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/emerald-plains",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-emeraldplains-blueprints.zip",
+      "checksum": "18333a8d3bca54ad13c91f5454b91c7c6f355b5833f8d7886a6d86c69410acb4",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/emerald-plains/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/emerald-plains/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/emerald-plains/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "favela",
+    "name": "Favela",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/favela",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-favela-blueprints.zip",
+      "checksum": "8ad7f06900b1f603a336821a949700c319dd64c48e9d420a529cf52b396d977b",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/favela/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/favela/2f.jpg"
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3,
+        "image": "maps/official/favela/3f.jpg"
+      },
+      {
+        "id": "5f",
+        "name": "5F",
+        "sort": 5,
+        "image": "maps/official/favela/5f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/favela/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "fortress",
+    "name": "Fortress",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/fortress",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-fortress-blueprints.zip",
+      "checksum": "abb1519b744911914cfd7581fb940ff225ea6acb7a7dd40736fd650d3f30a982",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/fortress/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/fortress/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/fortress/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "hereford-base",
+    "name": "Hereford Base",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/hereford-base",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-hereford-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "house",
+    "name": "House",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/house",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-house-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "kafe-dostoyevsky",
+    "name": "Kafe Dostoyevsky",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/kafe-dostoyevsky",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-kafe-blueprints.zip",
+      "checksum": "2e107e1cc517f6223c961568378d7fcf489398db27de882649aed8bd632ce555",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/kafe-dostoyevsky/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/kafe-dostoyevsky/2f.jpg"
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3,
+        "image": "maps/official/kafe-dostoyevsky/3f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/kafe-dostoyevsky/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "kanal",
+    "name": "Kanal",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/kanal",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-kanal-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "lair",
+    "name": "Lair",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/lair",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-lair-blueprints.zip",
+      "checksum": "c238e064135c439f5f9e96b96182fc19872f733c05a418ddcac7c48d1dc05442",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/lair/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/lair/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/lair/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/lair/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "nighthaven-labs",
+    "name": "Nighthaven Labs",
+    "status": "official",
+    "season": "Y7S4",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/nighthaven-labs",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-nighthavenlabs-blueprints.zip",
+      "checksum": "b98ff12dfc976f47ad65f6102d63ee448d2cbfc50109f1c766a813d89f26b96d",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/nighthaven-labs/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/nighthaven-labs/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/nighthaven-labs/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 3,
+        "image": "maps/official/nighthaven-labs/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "oregon",
+    "name": "Oregon",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/oregon",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-oregon-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "outback",
+    "name": "Outback",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/outback",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-outback-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "presidential-plane",
+    "name": "Presidential Plane",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/presidential-plane",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-plane-blueprints.zip",
+      "checksum": "88b43e972885dd17e95274b7d3a7463e1dd038e88bf6e0bf2ae6bc971e74d2f6",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/presidential-plane/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/presidential-plane/2f.jpg"
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3,
+        "image": "maps/official/presidential-plane/3f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/presidential-plane/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "skyscraper",
+    "name": "Skyscraper",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/skyscraper",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-skyscraper-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "stadium-alpha",
+    "name": "Stadium Alpha",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/stadium-alpha",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-stadiumalpha-blueprints.zip",
+      "checksum": "9de2bcf43e6c0a6d62b77d4df482096341ac50a9082b88e04312ae42b4ba9bde",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/stadium-alpha/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/stadium-alpha/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/stadium-alpha/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/stadium-alpha/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "stadium-bravo",
+    "name": "Stadium Bravo",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/stadium-bravo",
+      "blueprintZip": "https://ubistatic-a.ubisoft.com/0106/gamesites/rainbow6/blueprints/r6-maps-stadiumbravo-blueprints.zip",
+      "checksum": "affc3ebb23edd83e00bb5cb73e27c9338e507382b7f06e56860bde13374cabda",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/stadium-bravo/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/stadium-bravo/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/stadium-bravo/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/stadium-bravo/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "theme-park",
+    "name": "Theme Park",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/theme-park",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-themepark-blueprints.zip",
+      "checksum": "e6b07e400807264550126d062de942ed4d4e8bef88e1a72cac7d01b6d7c05a69",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/theme-park/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/theme-park/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/theme-park/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "tower",
+    "name": "Tower",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/tower",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-tower-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "villa",
+    "name": "Villa",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/villa",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-villa-blueprints.zip",
+      "checksum": "eb2b13d86d58fd49fb6fd86670a76527499e8ac65d35ab5d29de281348f36559",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "b1",
+        "name": "B1",
+        "sort": 0,
+        "image": "maps/official/villa/b1.jpg"
+      },
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1,
+        "image": "maps/official/villa/1f.jpg"
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2,
+        "image": "maps/official/villa/2f.jpg"
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99,
+        "image": "maps/official/villa/roof.jpg"
+      }
+    ]
+  },
+  {
+    "id": "yacht",
+    "name": "Yacht",
+    "status": "official",
+    "season": "Ubisoft current",
+    "source": {
+      "provider": "ubisoft",
+      "url": "https://www.ubisoft.com/en-gb/game/rainbow-six/siege/game-info/maps/yacht",
+      "blueprintZip": "https://static2.cdn.ubi.com/gamesites/rainbow6/blueprints/r6-maps-yacht-blueprints.zip",
+      "checksum": "unavailable",
+      "lastModified": "2026-06-26T04:22:31.490Z"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "3f",
+        "name": "3F",
+        "sort": 3
+      },
+      {
+        "id": "4f",
+        "name": "4F",
+        "sort": 4
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  },
+  {
+    "id": "bartlett",
+    "name": "Bartlett U.",
+    "status": "legacy",
+    "season": "Legacy import",
+    "source": {
+      "provider": "r6maps-legacy",
+      "url": "https://github.com/capajon/r6maps",
+      "revision": "77c3297",
+      "importedAt": "2026-06-25"
+    },
+    "floors": [
+      {
+        "id": "1f",
+        "name": "1F",
+        "sort": 1
+      },
+      {
+        "id": "2f",
+        "name": "2F",
+        "sort": 2
+      },
+      {
+        "id": "roof",
+        "name": "Roof",
+        "sort": 99
+      }
+    ]
+  }
+]

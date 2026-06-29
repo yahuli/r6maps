@@ -1,0 +1,2242 @@
+[
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "卡利普索赌场",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "俱乐部会所",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "夜港实验室",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "銀行",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "邊境",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "卡呂普索賭場",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "木屋",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "近戰特區",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "俱樂部會所",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "海岸線",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "領事館",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "綠寶石平原",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "貧民窟",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "要塞",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "赫里福基地",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "芝加哥豪宅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "杜斯妥也夫斯基咖啡館",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "運河",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "賊窩",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "Nighthaven 實驗室",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "奧勒岡鄉間屋宅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "荒漠",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "總統專機",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "摩天大樓",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "體育場 A",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "體育場 B",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "主題樂園",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "塔樓",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "別墅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "遊艇",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "銀行",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "国境",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "カリプソカジノ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "山荘",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "接近戦",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "クラブハウス",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "海岸線",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "領事館",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "エメラルドプレーンズ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "ファベーラ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "要塞",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "ヘレフォード基地",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "民家",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "カフェ・ドフトエスキー",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "運河",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "アジト",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "ナイトヘイヴンラボ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "オレゴン",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "アウトバック",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "大統領専用機",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "高層ビル",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "スタジアム・アルファ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "スタジアム・ブラボー",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "テーマパーク",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "タワー",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "ヴィラ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "ヨット",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "은행",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "경계",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "칼립소 카지노",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "별장",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "근접전",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "클럽하우스",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "해안선",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "영사관",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "에메랄드 평원",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "파벨라",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "요새",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "헤리퍼드 기지",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "저택",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "도스토예프스키 카페",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "운하",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "소굴",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "Nighthaven 실험실",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "오리건",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "오지",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "대통령 전용기",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "마천루",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "스타디움 알파",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "스타디움 브라보",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "테마파크",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "타워",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "빌라",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "요트",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "BANQUE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "FRONTIÈRE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Casino Calypso",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "CHALET",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "HUIS CLOS",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "CLUBHOUSE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "LITTORAL",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "CONSULAT",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "PLAINES D'ÉMERAUDE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "FAVELA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "FORTERESSE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Base d'Hereford",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Maison",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Café Dostoyevsky",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Canal",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Repaire",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Labo de Nighthaven",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Oregon",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Outback",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Avion présidentiel",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Gratte-ciel",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Stade Alpha",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Stade Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Parc d'attractions",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Tour",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Villa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Yacht",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "BANK",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "GRENZE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Calypso-Casino",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "CHALET",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "AUF ENGSTEM RAUM",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "CLUBHAUS",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "KÜSTE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "KONSULAT",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "EMERALD PLAINS",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "FAVELA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "FESTUNG",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Hereford-Basis",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Haus",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Café Dostojewski",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Kanal",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Versteck",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Nighthaven Labs",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Oregon",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Outback",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Präsidentenflugzeug",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Wolkenkratzer",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Stadion Alpha",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Stadion Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Freizeitpark",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Turm",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Villa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Jacht",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "BANCO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "FRONTERA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Casino Calypso",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "CHALET",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "COMBATE CERCANO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "CLUB",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "LITORAL",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "CONSULADO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "PRADERAS ESMERALDA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "FAVELA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "LA FORTALEZA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Base de Hereford",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Casa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Café Dostoyevsky",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Canal",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Guarida",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Laboratorios de Nighthaven",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Oregón",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Territorio Remoto",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Avión Presidencial",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Rascacielos",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Estadio Alfa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Estadio Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Parque de Atracciones",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "TORRE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Villa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Yate",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "BANCO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "FRONTEIRA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Cassino Calypso",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CHALÉ",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CURTA DISTÂNCIA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CLUBE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "LITORAL",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CONSULADO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "PLANÍCIE ESMERALDA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "FAVELA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "FORTALEZA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "BASE HEREFORD",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "RESIDÊNCIA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CAFÉ DOSTOYEVSKY",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "CANAL",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Covil",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Laboratórios Nighthaven",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Oregon",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Outback",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "AVIÃO PRESIDENCIAL",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "ARRANHA-CÉU",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Estádio Alpha",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Estádio Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "PARQUE TEMÁTICO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "TORRE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "MANSÃO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "IATE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "BANCA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "CONFINE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Casinò Calypso",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "CHALET",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "STRETTO CONTATTO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "CLUB HOUSE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "COSTA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "CONSOLATO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "PRATERIE DI SMERALDO",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "FAVELAS",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "FORTEZZA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Base di Hereford",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Casa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Café Dostoevskij",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Kanal",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Covo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Laboratori Nighthaven",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Oregon",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Outback",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Aereo presidenziale",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Grattacielo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Stadio Alfa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Stadio Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Parco Divertimenti",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "TORRE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Villa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Yacht",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "BANK",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "GRANICA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "calypso-casino",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Kasyno Calypso",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "DOMEK GÓRSKI",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "W ZWARCIU",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "clubhouse",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "KLUB",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "WYBRZEŻE",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "KONSULAT",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "SZMARAGDOWE RÓWNINY",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "FAWELA",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Forteca",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Baza Hereford",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Dom",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Kafe Dostojewski",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Kanał",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Kryjówka",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "nighthaven-labs",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Laboratoria Nighthaven",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Oregon",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Outback",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Samolot prezydencki",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Wieżowiec",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Stadion Alpha",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Stadion Bravo",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Park Rozrywki",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Wieża",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Willa",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Jacht",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bank",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "银行",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "border",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "边境",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "chalet",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "木屋",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "close-quarter",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "近战特区",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "coastline",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "海岸线",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "consulate",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "领事馆",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "emerald-plains",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "绿宝石平原",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "favela",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "贫民窟",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "fortress",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "要塞",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "hereford-base",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "赫里福基地",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "house",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "芝加哥豪宅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kafe-dostoyevsky",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "杜斯妥也夫斯基咖啡馆",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "kanal",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "运河",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "lair",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "贼窝",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "oregon",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "奥勒冈乡间屋宅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "outback",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "荒漠",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "presidential-plane",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "总统专机",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "skyscraper",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "摩天大楼",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-alpha",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "体育场 A",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "stadium-bravo",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "体育场 B",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "theme-park",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "主题乐园",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "tower",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "塔楼",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "villa",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "别墅",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "yacht",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "游艇",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "巴特雷特大学",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "巴特雷特大學",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "バートレット大学",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "바틀렛 대학",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Université Bartlett",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "Bartlett-Universität",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Universidad Bartlett",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Universidade Bartlett",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Università Bartlett",
+    "status": "published"
+  },
+  {
+    "entityType": "map",
+    "entityId": "bartlett",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Uniwersytet Bartlett",
+    "status": "published"
+  }
+]

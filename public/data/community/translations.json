@@ -2238,5 +2238,13 @@
     "locale": "pl-PL",
     "value": "Uniwersytet Bartlett",
     "status": "published"
+  },
+  {
+    "entityType": "marker",
+    "entityId": "calypso-casino-b1-ceiling-hatch-vault-hatch",
+    "field": "label",
+    "locale": "zh-CN",
+    "value": "保险库舱口",
+    "status": "proposed"
   }
 ]

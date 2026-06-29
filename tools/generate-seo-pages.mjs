@@ -246,7 +246,18 @@ function renderMapPage({ map, localeId, locales, translations, siteUrl }) {
     translations,
   });
   const floors = sortedFloors(map.floors);
-  const floorNames = floors.map((floor) => floor.name).join(', ');
+  const localizedFloors = floors.map((floor) => ({
+    ...floor,
+    localizedName: localizeEntity({
+      entityType: 'floor',
+      entityId: floor.id,
+      field: 'name',
+      fallback: floor.name,
+      locale: localeId,
+      translations,
+    }),
+  }));
+  const floorNames = localizedFloors.map((floor) => floor.localizedName).join(', ');
   const status = map.status === 'official' ? copy.official : copy.legacy;
   const title = `${mapName} - ${copy.titleSuffix} | R6Maps`;
   const description = copy.description(mapName, floorNames, status);
@@ -364,7 +375,7 @@ ${imageUrl ? `    <meta property="og:image" content="${escapeAttribute(imageUrl)
       </dl>
       <h2>${escapeHtml(copy.floorsLabel)}</h2>
       <ul>
-${floors.map((floor) => `        <li>${escapeHtml(floor.name)}</li>`).join('\n')}
+${localizedFloors.map((floor) => `        <li>${escapeHtml(floor.localizedName)}</li>`).join('\n')}
       </ul>
       <p><a class="primary-link" href="${escapeAttribute(interactiveUrl)}">${escapeHtml(copy.interactiveLink)}</a></p>
     </main>

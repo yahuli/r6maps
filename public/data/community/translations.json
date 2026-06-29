@@ -2238,5 +2238,621 @@
     "locale": "pl-PL",
     "value": "Uniwersytet Bartlett",
     "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "en",
+    "value": "Basement",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "地下",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "地下",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "地下",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "지하",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Sous-sol",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "K",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Sótano",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Porão",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Seminterrato",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "b1",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Piwnica (-1)",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "en",
+    "value": "1st Floor",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "1层",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "1樓",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "1階",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "1층",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Rez-de-chaussée",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "EG",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "1ª Planta",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "1º Andar",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Piano terra",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "1f",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Parter",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "en",
+    "value": "2nd Floor",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "2层",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "2樓",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "2階",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "2층",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "2ème",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "1. OG",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "2ª Planta",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "2º Andar",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "1º piano",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "2f",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "1. Piętro",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "en",
+    "value": "3rd Floor",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "3层",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "3樓",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "3階",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "3층",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "3ème",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "2. OG",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "3ª Planta",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "3º Andar",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "2º piano",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "3f",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "2. Piętro",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "en",
+    "value": "4th Floor",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "4层",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "4樓",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "4階",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "4층",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "4ème",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "3. OG",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "4ª Planta",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "4º Andar",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "3º piano",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "4f",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "3. Piętro",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "en",
+    "value": "5th Floor",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "5层",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "5樓",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "5階",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "5층",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "5ème",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "4. OG",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "5ª Planta",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "5º Andar",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "4º piano",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "5f",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "4. Piętro",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "en",
+    "value": "Roof",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "zh-CN",
+    "value": "屋顶",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "zh-TW",
+    "value": "屋頂",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "ja-JP",
+    "value": "屋上",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "ko-KR",
+    "value": "옥상",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "fr-FR",
+    "value": "Toit",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "de-DE",
+    "value": "AUSSEN",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "es-ES",
+    "value": "Tejado",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "pt-BR",
+    "value": "Telhado",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "it-IT",
+    "value": "Tetto",
+    "status": "published"
+  },
+  {
+    "entityType": "floor",
+    "entityId": "roof",
+    "field": "name",
+    "locale": "pl-PL",
+    "value": "Dach",
+    "status": "published"
   }
 ]

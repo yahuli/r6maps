@@ -22,10 +22,6 @@ export function localizeEntity({
   locale: string
   translations: TranslationEntry[]
 }) {
-  if (locale === 'en') {
-    return fallback
-  }
-
   const match = translations.find(
     (translation) =>
       translation.entityType === entityType &&

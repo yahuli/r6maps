@@ -1,5 +1,5 @@
 export function localizeEntity({ entityType, entityId, field, fallback, locale, translations }) {
-  if (!locale || locale === 'en') {
+  if (!locale) {
     return fallback;
   }
 

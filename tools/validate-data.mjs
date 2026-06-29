@@ -19,7 +19,7 @@ const VALID_MARKER_STATUSES = new Set(['published', 'proposed', 'deprecated']);
 const VALID_MAP_STATUSES = new Set(['official', 'legacy']);
 const VALID_SOURCES = new Set(['official', 'community']);
 const VALID_LOCALES = new Set(['en', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR', 'fr-FR', 'de-DE', 'es-ES', 'pt-BR', 'it-IT', 'pl-PL']);
-const VALID_TRANSLATION_ENTITIES = new Set(['map', 'marker']);
+const VALID_TRANSLATION_ENTITIES = new Set(['map', 'marker', 'floor']);
 const VALID_TRANSLATION_FIELDS = new Set(['name', 'label']);
 const SIZE_MARKER_TYPES = new Set(['ceiling-hatch', 'text-label']);
 const ROTATION_MARKER_TYPES = new Set(['text-label']);
@@ -31,6 +31,7 @@ export function validateRepositoryData(repositoryData) {
   const translations = Array.isArray(repositoryData.translations) ? repositoryData.translations : [];
   const mapIds = new Set();
   const markerIds = new Set();
+  const floorIds = new Set();
   const floorIdsByMap = new Map();
 
   for (const map of maps) {
@@ -64,15 +65,16 @@ export function validateRepositoryData(repositoryData) {
       errors.push(`map ${map.id} has invalid source provider: ${map.source?.provider}`);
     }
 
-    const floorIds = new Set();
+    const mapFloorIds = new Set();
     for (const floor of Array.isArray(map.floors) ? map.floors : []) {
       requireString(errors, floor.id, `map ${map.id} floor id`);
       if (floor.image != null && !String(floor.image).startsWith(`maps/official/${map.id}/`)) {
         errors.push(`map ${map.id} floor image must live under maps/official/${map.id}/`);
       }
+      mapFloorIds.add(floor.id);
       floorIds.add(floor.id);
     }
-    floorIdsByMap.set(map.id, floorIds);
+    floorIdsByMap.set(map.id, mapFloorIds);
   }
 
   for (const marker of markers) {
@@ -114,6 +116,9 @@ export function validateRepositoryData(repositoryData) {
     }
   }
 
+  const translationKeys = new Set();
+  const floorTranslationLocales = new Map();
+
   for (const translation of translations) {
     if (!VALID_TRANSLATION_ENTITIES.has(translation.entityType)) {
       errors.push(`translation has invalid entity type: ${translation.entityType}`);
@@ -121,6 +126,10 @@ export function validateRepositoryData(repositoryData) {
 
     if (!VALID_TRANSLATION_FIELDS.has(translation.field)) {
       errors.push(`translation ${translation.entityId} has invalid field: ${translation.field}`);
+    }
+
+    if (translation.entityType === 'floor' && translation.field !== 'name') {
+      errors.push(`floor translation ${translation.entityId} has invalid field: ${translation.field}`);
     }
 
     if (!VALID_LOCALES.has(translation.locale)) {
@@ -141,6 +150,37 @@ export function validateRepositoryData(repositoryData) {
 
     if (translation.entityType === 'marker' && !markerIds.has(translation.entityId)) {
       errors.push(`translation references unknown marker: ${translation.entityId}`);
+    }
+
+    if (translation.entityType === 'floor') {
+      if (!floorIds.has(translation.entityId)) {
+        errors.push(`translation references unknown floor: ${translation.entityId}`);
+      }
+      if (translation.status !== 'published') {
+        errors.push(`floor translation ${translation.entityId} must be published`);
+      }
+    }
+
+    const translationKey = `${translation.entityType}:${translation.entityId}:${translation.field}:${translation.locale}`;
+    if (translationKeys.has(translationKey)) {
+      errors.push(`duplicate translation: ${translationKey}`);
+    }
+    translationKeys.add(translationKey);
+
+    if (translation.entityType === 'floor' && translation.field === 'name' && translation.status === 'published') {
+      if (!floorTranslationLocales.has(translation.entityId)) {
+        floorTranslationLocales.set(translation.entityId, new Set());
+      }
+      floorTranslationLocales.get(translation.entityId).add(translation.locale);
+    }
+  }
+
+  for (const floorId of floorIds) {
+    const translatedLocales = floorTranslationLocales.get(floorId) ?? new Set();
+    for (const locale of VALID_LOCALES) {
+      if (!translatedLocales.has(locale)) {
+        errors.push(`missing floor translation for ${floorId} locale ${locale}`);
+      }
     }
   }
 

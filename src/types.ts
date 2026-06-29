@@ -9,7 +9,7 @@ export type MarkerType =
   | 'bomb'
 export type MarkerDirection = 'up' | 'down'
 export type MarkerStatus = 'published' | 'proposed' | 'deprecated'
-export type TranslationEntity = 'map' | 'marker'
+export type TranslationEntity = 'map' | 'marker' | 'floor'
 export type TranslationField = 'name' | 'label'
 
 export interface LocaleInfo {

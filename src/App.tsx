@@ -99,6 +99,17 @@ const DEFAULT_GITHUB_REPOSITORY = 'yahuli/r6maps'
 const COMMUNITY_DATA_ISSUE_LABEL = 'community-data'
 const PENDING_SUBMISSION_KEY = 'r6maps.pendingSubmissionPayload'
 
+function localizeFloorName(floor: OfficialMap['floors'][number], locale: string, translations: TranslationEntry[]) {
+  return localizeEntity({
+    entityType: 'floor',
+    entityId: floor.id,
+    field: 'name',
+    fallback: floor.name,
+    locale,
+    translations,
+  })
+}
+
 type IssueOpsPayload = {
   kind: 'r6maps-community-change-set'
   version: 1
@@ -878,7 +889,7 @@ function App() {
                   type="button"
                   onClick={() => handleFloorSelect(floor.id)}
                 >
-                  {floor.name}
+                  {localizeFloorName(floor, selectedLocale, translations)}
                 </button>
               ))}
             </div>
@@ -966,6 +977,7 @@ function App() {
             detailState={proposalDetailState}
             diffKindByMarkerId={proposalDiffKindByMarkerId}
             isSplitLayout={isSplitLayout}
+            maps={maps}
             panelFloorIds={panelFloorIds}
             proposalMarkers={proposalVisibleMarkers}
             selectedFloor={selectedFloor}
@@ -1005,6 +1017,7 @@ function App() {
                   draft={normalizedDraft}
                   draggingDraft={draggingDraft}
                   floor={floor}
+                  floorName={floor ? localizeFloorName(floor, selectedLocale, translations) : undefined}
                   ghostedMarkerId={ghostedMarkerId}
                   isSelectedFloor={floor?.id === selectedFloor?.id}
                   key={floorId}
@@ -1056,7 +1069,7 @@ function App() {
 
           <div className="status-strip">
             <span>{selectedMapName || 'Loading maps'}</span>
-            <span>{selectedFloor?.name ?? 'No floor selected'}</span>
+            <span>{selectedFloor ? localizeFloorName(selectedFloor, selectedLocale, translations) : t('noFloorSelected')}</span>
             <span>{sourceLabel}</span>
             <span>
               {visibleMarkers.length} {t('visibleMarkers')}
@@ -1333,6 +1346,7 @@ function ProposalPreviewWorkspace({
   detailState,
   diffKindByMarkerId,
   isSplitLayout,
+  maps,
   panelFloorIds,
   proposalMarkers,
   selectedFloor,
@@ -1357,6 +1371,7 @@ function ProposalPreviewWorkspace({
   detailState: ProposalDetailState
   diffKindByMarkerId: Map<string, ProposalMarkerDiffKind>
   isSplitLayout: boolean
+  maps: OfficialMap[]
   panelFloorIds: string[]
   proposalMarkers: CommunityMarker[]
   selectedFloor?: OfficialMap['floors'][number]
@@ -1403,6 +1418,7 @@ function ProposalPreviewWorkspace({
                 draft={previewDraft}
                 draggingDraft={false}
                 floor={floor}
+                floorName={floor ? localizeFloorName(floor, selectedLocale, translations) : undefined}
                 ghostedMarkerId={null}
                 isSelectedFloor={floor?.id === selectedFloor?.id}
                 key={floorId}
@@ -1444,7 +1460,7 @@ function ProposalPreviewWorkspace({
 
         <div className="status-strip">
           <span>{selectedMapName || t('loadingRepositoryData')}</span>
-          <span>{selectedFloor?.name ?? t('noFloorSelected')}</span>
+          <span>{selectedFloor ? localizeFloorName(selectedFloor, selectedLocale, translations) : t('noFloorSelected')}</span>
           <span>{sourceLabel}</span>
           <span>
             {proposalMarkers.length} {t('proposalPreviewMarkers')}
@@ -1454,21 +1470,35 @@ function ProposalPreviewWorkspace({
       </section>
 
       <aside className="inspector proposal-inspector" aria-label={t('proposalDetails')}>
-        <ProposalDetailPanel state={detailState} t={t} onMarkerSelect={onMarkerSelect} onRefresh={onRefresh} />
+        <ProposalDetailPanel
+          maps={maps}
+          selectedLocale={selectedLocale}
+          state={detailState}
+          t={t}
+          translations={translations}
+          onMarkerSelect={onMarkerSelect}
+          onRefresh={onRefresh}
+        />
       </aside>
     </>
   )
 }
 
 function ProposalDetailPanel({
+  maps,
   onMarkerSelect,
+  selectedLocale,
   state,
   t,
+  translations,
   onRefresh,
 }: {
+  maps: OfficialMap[]
   onMarkerSelect: (markerId: string) => void
+  selectedLocale: string
   state: ProposalDetailState
   t: (key: string) => string
+  translations: TranslationEntry[]
   onRefresh: () => void
 }) {
   if (state.status === 'unavailable') {
@@ -1581,6 +1611,19 @@ function ProposalDetailPanel({
           <div className="marker-diff-list">
             {detail.markerDiffs.map((diff) => {
               const marker = diff.after ?? diff.before
+              const markerMap = marker ? maps.find((map) => map.id === marker.mapId) : undefined
+              const markerFloor = markerMap?.floors.find((floor) => floor.id === marker?.floorId)
+              const markerMapName = markerMap
+                ? localizeEntity({
+                    entityType: 'map',
+                    entityId: markerMap.id,
+                    field: 'name',
+                    fallback: markerMap.name,
+                    locale: selectedLocale,
+                    translations,
+                  })
+                : marker?.mapId
+              const markerFloorName = markerFloor ? localizeFloorName(markerFloor, selectedLocale, translations) : marker?.floorId
 
               return (
                 <button
@@ -1591,7 +1634,7 @@ function ProposalDetailPanel({
                 >
                   <span>{proposalDiffLabel(diff.kind, t)}</span>
                   <strong>{marker ? formatMarkerDisplayLabel(marker, marker.label, t) : diff.markerId}</strong>
-                  {marker && <small>{`${marker.mapId} / ${marker.floorId}`}</small>}
+                  {marker && <small>{`${markerMapName} / ${markerFloorName}`}</small>}
                 </button>
               )
             })}
@@ -1621,6 +1664,7 @@ function MapPane({
   draft,
   draggingDraft,
   floor,
+  floorName,
   ghostedMarkerId,
   getMarkerLabel,
   getMarkerDiffKind,
@@ -1652,6 +1696,7 @@ function MapPane({
   draft: DraftMarker
   draggingDraft: boolean
   floor?: { id: string; name: string; image?: string; sort: number }
+  floorName?: string
   ghostedMarkerId: string | null
   getMarkerLabel: (marker: CommunityMarker) => string
   getMarkerDiffKind?: (marker: CommunityMarker) => ProposalMarkerDiffKind | undefined
@@ -1701,15 +1746,16 @@ function MapPane({
   }
 
   const showDraft = canEdit && floor && draft.mapId === mapId && draft.floorId === floor.id
+  const displayFloorName = floorName ?? t('noFloorSelected')
 
   return (
-    <article className="map-pane" aria-label={floor?.name ?? 'Map floor'}>
-      <div className={isSelectedFloor ? 'pane-title selected' : 'pane-title'}>{floor?.name ?? 'No floor'}</div>
+    <article className="map-pane" aria-label={displayFloorName}>
+      <div className={isSelectedFloor ? 'pane-title selected' : 'pane-title'}>{displayFloorName}</div>
       <svg
         className="blueprint"
         viewBox="0 0 1000 620"
         role="img"
-        aria-label={floor?.name ?? 'Map floor'}
+        aria-label={displayFloorName}
         onDragOver={(event) => {
           if (canEdit) {
             event.preventDefault()

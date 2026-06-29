@@ -37,6 +37,7 @@ jobs:
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
           VITE_GITHUB_REPOSITORY: ${{ github.repository }}
+          VITE_SUBMISSION_API_BASE: ${{ vars.SUBMISSION_API_BASE }}
         run: npm run build
 
       - name: Upload artifact

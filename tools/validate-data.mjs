@@ -153,6 +153,7 @@ export async function validateRepositoryFiles(rootDir) {
   const staticProposalError = await staticProposalDirectoryError(rootDir);
   const markerFiles = await readSplitCommunityMarkerFiles(path.join(rootDir, 'public/data/community'));
   const markers = markerFiles.markers;
+  const markerIndexCoverageErrors = validateMarkerIndexCoverage(maps, markerFiles.mapIds);
   const translationsFile = await readJsonSafe(
     path.join(rootDir, 'public/data/community/translations.json'),
     'public/data/community/translations.json',
@@ -161,11 +162,29 @@ export async function validateRepositoryFiles(rootDir) {
   const result = validateRepositoryData({ maps, markers, translations });
 
   return {
-    errors: [...[mapsFile.error, staticProposalError, translationsFile.error].filter(Boolean), ...markerFiles.errors, ...result.errors],
+    errors: [
+      ...[mapsFile.error, staticProposalError, translationsFile.error].filter(Boolean),
+      ...markerFiles.errors,
+      ...markerIndexCoverageErrors,
+      ...result.errors,
+    ],
     maps,
     markers,
     translations,
   };
+}
+
+function validateMarkerIndexCoverage(maps, markerIndexMapIds) {
+  const errors = [];
+  const indexedMapIds = new Set(markerIndexMapIds);
+
+  for (const map of maps) {
+    if (typeof map?.id === 'string' && map.id.trim() !== '' && !indexedMapIds.has(map.id)) {
+      errors.push(`public/data/community/markers/index.json must list map id: ${map.id}`);
+    }
+  }
+
+  return errors;
 }
 
 async function staticProposalDirectoryError(rootDir) {

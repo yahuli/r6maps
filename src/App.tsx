@@ -9,7 +9,7 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react'
-import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
 import { loadCommunityMarkers } from './lib/communityMarkers'
 import { createTranslator, localizeEntity } from './lib/i18n'
@@ -68,12 +68,25 @@ const MARKER_ICON_FILES = {
 
 const DEFAULT_GITHUB_REPOSITORY = 'yahuli/r6maps'
 const COMMUNITY_DATA_ISSUE_LABEL = 'community-data'
+const PENDING_SUBMISSION_KEY = 'r6maps.pendingSubmissionPayload'
 
 type IssueOpsPayload = {
   kind: 'r6maps-community-change-set'
   version: 1
   summary: ReturnType<typeof summarizePatchForPreview>
   patch: Patch
+}
+
+type SubmissionAuthResponse = {
+  loginUrl: string
+}
+
+type SubmissionApiResult = {
+  pullRequest: {
+    number: number
+    url: string
+  }
+  branch: string
 }
 
 function App() {
@@ -114,7 +127,11 @@ function App() {
   const [draggingDraft, setDraggingDraft] = useState(false)
   const [draggingTool, setDraggingTool] = useState<ToolDragState | null>(null)
   const [copied, setCopied] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [submissionNotice, setSubmissionNotice] = useState('')
+  const [createdPullRequestUrl, setCreatedPullRequestUrl] = useState('')
   const [submitPayloadPreview, setSubmitPayloadPreview] = useState('')
+  const pendingAutoSubmissionAttempted = useRef(false)
   const draftRef = useRef<DraftMarker>(draft)
 
   useEffect(() => {
@@ -253,11 +270,60 @@ function App() {
         })
       : null
   const canSubmitChanges = dataLoaded && Boolean(prPatch)
+  const submissionApiBase = submissionApiBaseUrl()
   const pendingChangeSummary = t('pendingChangeSummary')
     .replace('{add}', String(pendingAddCount))
     .replace('{update}', String(pendingUpdateCount))
     .replace('{delete}', String(pendingDeleteCount))
   const languageOptions = locales.length > 0 ? locales : [{ id: 'en', name: 'English', nativeName: 'English' }]
+  const submitPayloadToApi = useCallback(
+    async (payload: IssueOpsPayload, options: { redirectOnAuth: boolean }) => {
+      setSubmitting(true)
+
+      try {
+        const response = await fetch(apiUrl(submissionApiBase, '/api/submissions'), {
+          method: 'POST',
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-R6Maps-Return-To': window.location.href,
+          },
+          body: JSON.stringify(payload),
+        })
+        const body = await readJsonResponse<SubmissionApiResult | SubmissionAuthResponse>(response)
+
+        if (response.status === 401 && 'loginUrl' in body) {
+          if (options.redirectOnAuth) {
+            writePendingSubmissionPayload(payload)
+            setSubmissionNotice(t('loginGitHub'))
+            window.location.assign(body.loginUrl)
+            return true
+          }
+
+          clearPendingSubmissionPayload()
+          setSubmissionNotice(t('apiSubmissionFallback'))
+          return false
+        }
+
+        if (!response.ok || !('pullRequest' in body)) {
+          throw new Error(`Submission API failed with status ${response.status}`)
+        }
+
+        clearPendingSubmissionPayload()
+        setCreatedPullRequestUrl(body.pullRequest.url)
+        setSubmissionNotice(t('pullRequestCreated'))
+        window.open(body.pullRequest.url, '_blank', 'noopener,noreferrer')
+        return true
+      } catch {
+        clearPendingSubmissionPayload()
+        setSubmissionNotice(t('apiSubmissionFallback'))
+        return false
+      } finally {
+        setSubmitting(false)
+      }
+    },
+    [submissionApiBase, t],
+  )
 
   useEffect(() => {
     if (selectedMap && selectedFloor && draftAction !== 'update') {
@@ -274,6 +340,21 @@ function App() {
       setEditMode(false)
     }
   }, [editMode, isCompact])
+
+  useEffect(() => {
+    if (!dataLoaded || !submissionApiBase || pendingAutoSubmissionAttempted.current) {
+      return
+    }
+
+    const pendingPayload = readPendingSubmissionPayload()
+    if (!pendingPayload) {
+      pendingAutoSubmissionAttempted.current = true
+      return
+    }
+
+    pendingAutoSubmissionAttempted.current = true
+    void submitPayloadToApi(pendingPayload, { redirectOnAuth: false })
+  }, [dataLoaded, submissionApiBase, submitPayloadToApi])
 
   useEffect(() => {
     if (!draggingTool) {
@@ -556,8 +637,24 @@ function App() {
       return
     }
 
-    const repository = githubIssueRepository()
     const payload = buildIssueOpsPayload(prPatch)
+    setSubmissionNotice('')
+    setCreatedPullRequestUrl('')
+    setSubmitPayloadPreview('')
+    setCopied(false)
+
+    if (submissionApiBase) {
+      const submitted = await submitPayloadToApi(payload, { redirectOnAuth: true })
+      if (submitted) {
+        return
+      }
+    }
+
+    await submitPayloadWithIssueFallback(payload)
+  }
+
+  async function submitPayloadWithIssueFallback(payload: IssueOpsPayload) {
+    const repository = githubIssueRepository()
     const issueBody = buildIssueOpsIssueBody(payload)
     const copiedPayload = await copySubmissionPayload(issueBody)
 
@@ -567,7 +664,7 @@ function App() {
       return
     }
 
-    const issueUrl = buildGitHubIssueUrl(repository.repo, prPatch.title)
+    const issueUrl = buildGitHubIssueUrl(repository.repo, payload.patch.title)
     const openedWindow = window.open(issueUrl, '_blank', 'noopener,noreferrer')
 
     setCopied(true)
@@ -871,10 +968,26 @@ function App() {
                   placeholder={draft.label}
                 />
               </label>
-              <button className="primary-button patch-copy-button" type="button" disabled={!canSubmitChanges} onClick={submitChanges}>
+              <button
+                className="primary-button patch-copy-button"
+                type="button"
+                disabled={!canSubmitChanges || submitting}
+                onClick={submitChanges}
+              >
                 <GitPullRequestArrow size={17} />
-                {copied ? t('copiedPatch') : t('submitChanges')}
+                {submitting ? t('submittingChanges') : copied ? t('copiedPatch') : t('submitChanges')}
               </button>
+              {submissionNotice && (
+                <p className="patch-preview-hint">
+                  {createdPullRequestUrl ? (
+                    <a href={createdPullRequestUrl} rel="noreferrer" target="_blank">
+                      {submissionNotice}
+                    </a>
+                  ) : (
+                    submissionNotice
+                  )}
+                </p>
+              )}
               <pre className="patch-preview">
                 {prPatch
                   ? JSON.stringify(summarizePatchForPreview(prPatch), null, 2)
@@ -1766,6 +1879,14 @@ function githubIssueRepository() {
   }
 }
 
+function submissionApiBaseUrl() {
+  return (import.meta.env.VITE_SUBMISSION_API_BASE?.trim() ?? '').replace(/\/+$/, '')
+}
+
+function apiUrl(baseUrl: string, path: string) {
+  return `${baseUrl}${path}`
+}
+
 function buildIssueOpsPayload(patch: Patch): IssueOpsPayload {
   return {
     kind: 'r6maps-community-change-set',
@@ -1783,6 +1904,41 @@ function buildIssueOpsIssueBody(payload: IssueOpsPayload) {
     JSON.stringify(payload, null, 2),
     '```',
   ].join('\n')
+}
+
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  try {
+    return (await response.json()) as T
+  } catch {
+    return {} as T
+  }
+}
+
+function readPendingSubmissionPayload() {
+  try {
+    const value = window.sessionStorage.getItem(PENDING_SUBMISSION_KEY)
+
+    return value ? (JSON.parse(value) as IssueOpsPayload) : null
+  } catch {
+    clearPendingSubmissionPayload()
+    return null
+  }
+}
+
+function writePendingSubmissionPayload(payload: IssueOpsPayload) {
+  try {
+    window.sessionStorage.setItem(PENDING_SUBMISSION_KEY, JSON.stringify(payload))
+  } catch {
+    // The OAuth flow still works, but automatic retry after redirect is unavailable.
+  }
+}
+
+function clearPendingSubmissionPayload() {
+  try {
+    window.sessionStorage.removeItem(PENDING_SUBMISSION_KEY)
+  } catch {
+    // Ignore storage failures; the submission path can still fall back to IssueOps.
+  }
 }
 
 function buildGitHubIssueUrl(repo: string, title: string) {

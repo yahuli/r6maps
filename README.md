@@ -46,7 +46,7 @@ Configure the GitHub repository used by the static IssueOps submit button with:
 VITE_GITHUB_REPOSITORY=owner/repo
 ```
 
-If it is not set, the app falls back to `capajon/r6maps` and still exposes the generated submission payload for copying.
+If it is not set, the app falls back to the current repository, `yahuli/r6maps`, and still exposes the generated submission payload for copying.
 
 ## Community PR Flow
 

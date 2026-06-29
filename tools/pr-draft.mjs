@@ -19,8 +19,15 @@ export function buildDeleteMarkerPatch({ markerId, markers, translations }) {
   if (remainingTranslations.length !== translations.length) {
     files.push({
       path: 'public/data/community/translations.json',
-      action: 'replace',
-      content: remainingTranslations,
+      action: 'translation-changes',
+      changes: {
+        remove: [
+          {
+            entityType: 'marker',
+            entityId: markerId,
+          },
+        ],
+      },
     });
   }
 
@@ -42,6 +49,16 @@ export function summarizePatchForPreview(patch) {
     branch: patch.branch,
     title: patch.title,
     files: patch.files.map((file) => {
+      if (file.action === 'translation-changes') {
+        return {
+          path: file.path,
+          action: file.action,
+          upsertCount: file.changes?.upsert?.length ?? 0,
+          removeCount: file.changes?.remove?.length ?? 0,
+          sample: [...(file.changes?.upsert ?? []), ...(file.changes?.remove ?? [])].slice(-3),
+        };
+      }
+
       if (!Array.isArray(file.content)) {
         return file;
       }

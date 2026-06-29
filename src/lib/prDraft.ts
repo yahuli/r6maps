@@ -1,10 +1,28 @@
 import type { CommunityMarker, DraftMarker, TranslationEntry } from '../types'
 
-export type PatchFile = {
+type ReplacePatchFile = {
   path: string
   action: 'replace'
-  content: CommunityMarker[] | TranslationEntry[]
+  content: CommunityMarker[]
 }
+
+type TranslationRemoveChange = {
+  entityType: TranslationEntry['entityType']
+  entityId: string
+  field?: TranslationEntry['field']
+  locale?: string
+}
+
+type TranslationChangesFile = {
+  path: 'public/data/community/translations.json'
+  action: 'translation-changes'
+  changes: {
+    upsert?: TranslationEntry[]
+    remove?: TranslationRemoveChange[]
+  }
+}
+
+export type PatchFile = ReplacePatchFile | TranslationChangesFile
 
 export type Patch = {
   branch: string
@@ -52,8 +70,10 @@ export function buildMarkerPatch(
 
     files.push({
       path: 'public/data/community/translations.json',
-      action: 'replace',
-      content: [...(options.existingTranslations ?? []), translation],
+      action: 'translation-changes',
+      changes: {
+        upsert: [translation],
+      },
     })
   }
 
@@ -161,35 +181,24 @@ export function buildChangeSetPatch({
           status: 'proposed' as const,
         }
       : undefined
-  const localizedUpdateIds = new Set(localizedTranslations.map((translation) => translation.entityId))
-  const nextTranslations = translations.filter(
-    (translation) =>
-      !(translation.entityType === 'marker' && deleteIds.has(translation.entityId)) &&
-      !(
-        translation.entityType === 'marker' &&
-        translation.field === 'label' &&
-        localizedUpdateIds.has(translation.entityId) &&
-        translation.locale === options?.locale
-      ),
+  const translationUpserts = [addTranslation, ...localizedTranslations].filter((translation): translation is TranslationEntry =>
+    Boolean(translation),
   )
+  const translationRemovals = Array.from(deleteIds)
+    .filter((markerId) => translations.some((translation) => translation.entityType === 'marker' && translation.entityId === markerId))
+    .map((markerId) => ({
+      entityType: 'marker' as const,
+      entityId: markerId,
+    }))
 
-  if (addTranslation) {
-    nextTranslations.push(addTranslation)
-  }
-  nextTranslations.push(...localizedTranslations)
-
-  if (
-    nextTranslations.length !== translations.length ||
-    localizedTranslations.length > 0 ||
-    Boolean(addTranslation) ||
-    Array.from(deleteIds).some((markerId) =>
-      translations.some((translation) => translation.entityType === 'marker' && translation.entityId === markerId),
-    )
-  ) {
+  if (translationUpserts.length > 0 || translationRemovals.length > 0) {
     files.push({
       path: 'public/data/community/translations.json',
-      action: 'replace',
-      content: nextTranslations,
+      action: 'translation-changes',
+      changes: {
+        ...(translationUpserts.length > 0 ? { upsert: translationUpserts } : {}),
+        ...(translationRemovals.length > 0 ? { remove: translationRemovals } : {}),
+      },
     })
   }
 
@@ -241,8 +250,15 @@ export function buildDeleteMarkerPatch({
   if (remainingTranslations.length !== translations.length) {
     files.push({
       path: 'public/data/community/translations.json',
-      action: 'replace',
-      content: remainingTranslations,
+      action: 'translation-changes',
+      changes: {
+        remove: [
+          {
+            entityType: 'marker',
+            entityId: markerId,
+          },
+        ],
+      },
     })
   }
 
@@ -337,19 +353,10 @@ export function buildUpdateMarkersPatch({
   if (localizedTranslations.length > 0) {
     files.push({
       path: 'public/data/community/translations.json',
-      action: 'replace',
-      content: [
-        ...(options?.existingTranslations ?? []).filter(
-          (existing) =>
-            !(
-              existing.entityType === 'marker' &&
-              existing.field === 'label' &&
-              updateIds.has(existing.entityId) &&
-              existing.locale === options?.locale
-            ),
-        ),
-        ...localizedTranslations,
-      ],
+      action: 'translation-changes',
+      changes: {
+        upsert: localizedTranslations,
+      },
     })
   }
 
@@ -454,12 +461,24 @@ export function summarizePatchForPreview(patch: Patch) {
   return {
     branch: patch.branch,
     title: patch.title,
-    files: patch.files.map((file) => ({
-      path: file.path,
-      action: file.action,
-      itemCount: file.content.length,
-      sample: file.content.slice(-3),
-    })),
+    files: patch.files.map((file) => {
+      if (file.action === 'translation-changes') {
+        return {
+          path: file.path,
+          action: file.action,
+          upsertCount: file.changes.upsert?.length ?? 0,
+          removeCount: file.changes.remove?.length ?? 0,
+          sample: [...(file.changes.upsert ?? []), ...(file.changes.remove ?? [])].slice(-3),
+        }
+      }
+
+      return {
+        path: file.path,
+        action: file.action,
+        itemCount: file.content.length,
+        sample: file.content.slice(-3),
+      }
+    }),
     checklist: patch.checklist,
   }
 }

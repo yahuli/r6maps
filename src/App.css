@@ -791,6 +791,12 @@ dd {
   font: 500 11px/1.5 var(--mono);
 }
 
+.patch-preview-hint {
+  margin: 0 12px 8px;
+  color: #ffeaa3;
+  font: 700 12px/1.35 var(--sans);
+}
+
 .patch-mode {
   margin: -4px 12px 12px;
   color: #9ee1ff;

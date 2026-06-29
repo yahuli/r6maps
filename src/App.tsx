@@ -66,7 +66,7 @@ const MARKER_ICON_FILES = {
   ladder: 'ladder@2x.png',
 } as const
 
-const DEFAULT_GITHUB_REPOSITORY = 'capajon/r6maps'
+const DEFAULT_GITHUB_REPOSITORY = 'yahuli/r6maps'
 const COMMUNITY_DATA_ISSUE_LABEL = 'community-data'
 
 type IssueOpsPayload = {
@@ -559,20 +559,20 @@ function App() {
     const repository = githubIssueRepository()
     const payload = buildIssueOpsPayload(prPatch)
     const issueBody = buildIssueOpsIssueBody(payload)
-    const issueUrl = buildGitHubIssueUrl(repository.repo, prPatch.title, issueBody)
-    const openedWindow = window.open(issueUrl, '_blank', 'noopener,noreferrer')
-    const shouldCopyFallback = !openedWindow || !repository.configured
+    const copiedPayload = await copySubmissionPayload(issueBody)
 
-    if (shouldCopyFallback) {
-      const copiedPayload = await copySubmissionPayload(issueBody)
-      setCopied(copiedPayload)
-      setSubmitPayloadPreview(copiedPayload ? '' : issueBody)
-      window.setTimeout(() => setCopied(false), 1600)
+    if (!copiedPayload) {
+      setCopied(false)
+      setSubmitPayloadPreview(issueBody)
       return
     }
 
-    setCopied(false)
-    setSubmitPayloadPreview('')
+    const issueUrl = buildGitHubIssueUrl(repository.repo, prPatch.title)
+    const openedWindow = window.open(issueUrl, '_blank', 'noopener,noreferrer')
+
+    setCopied(true)
+    setSubmitPayloadPreview(openedWindow && repository.configured ? '' : issueBody)
+    window.setTimeout(() => setCopied(false), 1600)
   }
 
   return (
@@ -882,7 +882,12 @@ function App() {
                     ? t('noPatchQueued')
                     : t('loadingRepositoryData')}
               </pre>
-              {submitPayloadPreview && <pre className="patch-preview">{submitPayloadPreview}</pre>}
+              {submitPayloadPreview && (
+                <>
+                  <p className="patch-preview-hint">{t('manualPayloadCopyHint')}</p>
+                  <pre className="patch-preview">{submitPayloadPreview}</pre>
+                </>
+              )}
               <div
                 className={
                   pendingDeleteCount > 0 ? 'patch-mode delete' : pendingUpdateCount > 0 ? 'patch-mode update' : 'patch-mode'
@@ -1780,14 +1785,22 @@ function buildIssueOpsIssueBody(payload: IssueOpsPayload) {
   ].join('\n')
 }
 
-function buildGitHubIssueUrl(repo: string, title: string, body: string) {
+function buildGitHubIssueUrl(repo: string, title: string) {
   const params = new URLSearchParams({
     title,
-    body,
+    body: buildShortGitHubIssueBody(),
     labels: COMMUNITY_DATA_ISSUE_LABEL,
   })
 
   return `https://github.com/${repo}/issues/new?${params.toString()}`
+}
+
+function buildShortGitHubIssueBody() {
+  return [
+    'The R6Maps editor copied the full JSON payload to your clipboard.',
+    '',
+    'Please paste that payload here before submitting this issue.',
+  ].join('\n')
 }
 
 async function copySubmissionPayload(payload: string) {

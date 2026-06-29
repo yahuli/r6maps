@@ -1,6 +1,6 @@
 # R6Maps Wiki Demo
 
-A static GitHub Pages demo for restarting the abandoned `capajon/r6maps` idea with a GitHub-backed data workflow.
+A static Cloudflare Pages site for restarting the abandoned `capajon/r6maps` idea with a GitHub-backed data workflow.
 
 The app is intentionally built without a server:
 
@@ -9,7 +9,7 @@ The app is intentionally built without a server:
 - `public/data/community/translations.json` stores community-editable map and marker translations.
 - `public/data/i18n/ui.json` stores UI text for the static app.
 - A Cloudflare Worker can turn community submissions into GitHub PRs. Without the Worker, GitHub Issues remain the fallback queue.
-- GitHub Actions validates data, builds the site, and deploys Pages. Cloudflare Worker Cron is the only automatic merge entry point for qualified low-risk community PRs.
+- GitHub Actions validates data, builds the site, and deploys Cloudflare Pages. Cloudflare Worker Cron is the only automatic merge entry point for qualified low-risk community PRs.
 - Official map data is maintained manually by repository collaborators. Community IssueOps submissions do not modify `public/data/official/maps.json`.
 - Community proposal and review state lives in GitHub Issues and Pull Requests, not in static JSON under `public/data/community`.
 
@@ -28,11 +28,27 @@ npm run lint
 npm run build
 ```
 
-## GitHub Pages Hosting
+## Cloudflare Pages Hosting
 
-Enable GitHub Pages for this repository and select GitHub Actions as the source. The `Deploy GitHub Pages` workflow builds the Vite app and publishes `dist`.
+Production hosting is Cloudflare Pages. The `Deploy Cloudflare Pages` workflow runs on `push` to `main`, builds `dist`, and deploys with:
 
-Project pages need a base path. The workflow sets:
+```bash
+npx wrangler pages deploy dist --project-name r6maps --branch main
+```
+
+Cloudflare Pages serves the site from `/`, so production builds should not set `VITE_BASE_PATH`.
+
+The build also generates crawlable SEO pages, `sitemap.xml`, and `robots.txt` after Vite finishes. Configure the production site URL with:
+
+```bash
+SITE_URL=https://r6maps.pages.dev
+```
+
+The workflow passes repository variable `SITE_URL` to Vite as `VITE_SITE_URL`. If it is not configured, the SEO generator falls back to `https://r6maps.pages.dev`.
+
+## GitHub Pages Fallback
+
+The old `Deploy GitHub Pages` workflow is manual-only. It still sets a project-page base path for fallback publishes:
 
 ```bash
 VITE_BASE_PATH=/${{ github.event.repository.name }}/
@@ -54,7 +70,7 @@ Configure the optional direct PR submission Worker with a repository variable:
 SUBMISSION_API_BASE=https://r6maps-submissions.example.workers.dev
 ```
 
-The Pages workflow passes this value to Vite as `VITE_SUBMISSION_API_BASE`. If the repository variable is empty or the Worker call fails, the editor falls back to copying the payload and opening a short GitHub Issue URL.
+The Pages workflows pass this value to Vite as `VITE_SUBMISSION_API_BASE`. If the repository variable is empty or the Worker call fails, the editor falls back to copying the payload and opening a short GitHub Issue URL.
 
 ## Cloudflare Worker PR Submissions and Proposals
 
@@ -79,7 +95,8 @@ Required Worker variables:
 GITHUB_OWNER=yahuli
 GITHUB_REPO=r6maps
 GITHUB_BASE_BRANCH=main
-ALLOWED_ORIGINS=https://yahuli.github.io,http://localhost:5173
+ALLOWED_ORIGINS=https://r6maps.pages.dev,https://yahuli.github.io,http://localhost:5173
+SITE_URL=https://r6maps.pages.dev
 ```
 
 Required Worker secrets:

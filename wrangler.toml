@@ -9,7 +9,8 @@ crons = ["17 * * * *"]
 GITHUB_OWNER = "yahuli"
 GITHUB_REPO = "r6maps"
 GITHUB_BASE_BRANCH = "main"
-ALLOWED_ORIGINS = "https://yahuli.github.io,http://localhost:5173"
+ALLOWED_ORIGINS = "https://r6maps.pages.dev,https://yahuli.github.io,http://localhost:5173"
+SITE_URL = "https://r6maps.pages.dev"
 
 # Configure these as Cloudflare secrets:
 # - SESSION_SECRET

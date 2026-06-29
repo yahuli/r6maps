@@ -7,7 +7,7 @@ const RISK_LOW_LABEL = 'risk-low'
 const RISK_MEDIUM_LABEL = 'risk-medium'
 const RISK_HIGH_LABEL = 'risk-high'
 const BLOCKING_PROPOSAL_LABELS = new Set(['blocked', 'needs-maintainer-review', RISK_MEDIUM_LABEL, RISK_HIGH_LABEL])
-const PROPOSAL_PREVIEW_BASE_URL = 'https://yahuli.github.io/r6maps/#/proposals'
+const DEFAULT_SITE_URL = 'https://r6maps.pages.dev'
 const AUTO_MERGE_MIN_OPEN_HOURS = 24
 const AUTO_MERGE_MIN_APPROVALS = 5
 const AUTO_MERGE_MIN_NET_APPROVALS = 3
@@ -327,7 +327,7 @@ async function handleSubmission(request, env) {
     method: 'POST',
     token: appToken,
     body: {
-      body: buildVotingInstructionsComment(pullRequest.number),
+      body: buildVotingInstructionsComment(pullRequest.number, siteUrlFromEnv(env)),
     },
   })
 
@@ -429,6 +429,7 @@ async function createGitHubContext(env) {
     owner: env.GITHUB_OWNER,
     repo: env.GITHUB_REPO,
     baseBranch: env.GITHUB_BASE_BRANCH ?? 'main',
+    siteUrl: siteUrlFromEnv(env),
     appToken: await createInstallationToken(env),
   }
 }
@@ -472,6 +473,7 @@ async function loadProposalEvaluation(context, pull, options = {}) {
       gate,
       includeVoters: options.includeVoters === true,
       includeCheckDetails: options.includeVoters === true,
+      siteUrl: context.siteUrl,
     }),
   }
 }
@@ -679,7 +681,7 @@ function evaluateProposalGate({ pull, labels, files, votes, checks, now }) {
   }
 }
 
-function serializeProposal(pull, { labels, files, checks, votes, gate, includeVoters, includeCheckDetails }) {
+function serializeProposal(pull, { labels, files, checks, votes, gate, includeVoters, includeCheckDetails, siteUrl }) {
   return {
     number: pull.number,
     title: pull.title,
@@ -700,7 +702,7 @@ function serializeProposal(pull, { labels, files, checks, votes, gate, includeVo
     votes: serializeVotes(votes, includeVoters),
     checks: serializeChecks(checks, includeCheckDetails),
     changedFiles: files.map(serializeChangedFile),
-    previewUrl: proposalPreviewUrl(pull.number),
+    previewUrl: proposalPreviewUrl(pull.number, siteUrl),
   }
 }
 
@@ -796,7 +798,7 @@ async function buildProposalPreview(context, pull, files) {
   }
 
   return {
-    url: proposalPreviewUrl(pull.number),
+    url: proposalPreviewUrl(pull.number, context.siteUrl),
     markerFiles,
     translations,
   }
@@ -890,8 +892,8 @@ async function readRepoJsonOrNull(owner, repo, path, ref, token) {
   }
 }
 
-function proposalPreviewUrl(number) {
-  return `${PROPOSAL_PREVIEW_BASE_URL}/${number}`
+function proposalPreviewUrl(number, siteUrl) {
+  return `${siteUrl}/#/proposals/${number}`
 }
 
 function labelNames(pull) {
@@ -1317,11 +1319,11 @@ function buildPullRequestBody(validated, user) {
   ].join('\n')
 }
 
-function buildVotingInstructionsComment(number) {
+function buildVotingInstructionsComment(number, siteUrl) {
   return [
     '## Community review',
     '',
-    `Preview this proposal on the site: ${proposalPreviewUrl(number)}`,
+    `Preview this proposal on the site: ${proposalPreviewUrl(number, siteUrl)}`,
     '',
     'React to this PR with `+1` to approve or `-1` to reject.',
     'Votes from bots and the PR author are ignored. Worker auto-merge only applies to low-risk community data PRs after the review window, successful checks, and the required qualified vote threshold.',
@@ -1527,7 +1529,7 @@ function loginUrlForRequest(request, env) {
 
 function allowedReturnTo(value, env) {
   const origins = allowedOrigins(env)
-  const fallback = origins[0] ?? 'https://yahuli.github.io'
+  const fallback = origins[0] ?? DEFAULT_SITE_URL
 
   try {
     const url = new URL(value ?? fallback)
@@ -1555,6 +1557,20 @@ function corsHeaders(request, env) {
   }
 
   return headers
+}
+
+function siteUrlFromEnv(env) {
+  const candidate = String(env.SITE_URL ?? DEFAULT_SITE_URL).trim() || DEFAULT_SITE_URL
+
+  try {
+    const url = new URL(candidate)
+    url.hash = ''
+    url.search = ''
+
+    return url.toString().replace(/\/+$/, '')
+  } catch {
+    return DEFAULT_SITE_URL
+  }
 }
 
 function allowedOrigins(env) {

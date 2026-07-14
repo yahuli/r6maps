@@ -6,11 +6,25 @@ import { readSplitCommunityMarkerFiles } from './community-markers.mjs';
 const VALID_MARKER_TYPES = new Set([
   'camera',
   'ceiling-hatch',
+  'floor-hatch',
+  'breakable-wall',
+  'line-of-sight-wall',
+  'line-of-sight-floor',
   'text-label',
   'spawn',
   'skylight',
+  'drone-tunnel',
   'vertical-route',
   'ladder',
+  'fire-extinguisher',
+  'gas-pipe',
+  'insertion-point',
+  'compass',
+  'wall',
+  'door',
+  'double-door',
+  'window',
+  'double-window',
   'bomb',
 ]);
 const VALID_SITE_LETTERS = new Set(['A', 'B']);
@@ -21,8 +35,7 @@ const VALID_SOURCES = new Set(['official', 'community']);
 const VALID_LOCALES = new Set(['en', 'zh-CN', 'zh-TW', 'ja-JP', 'ko-KR', 'fr-FR', 'de-DE', 'es-ES', 'pt-BR', 'it-IT', 'pl-PL']);
 const VALID_TRANSLATION_ENTITIES = new Set(['map', 'marker', 'floor']);
 const VALID_TRANSLATION_FIELDS = new Set(['name', 'label']);
-const SIZE_MARKER_TYPES = new Set(['ceiling-hatch', 'text-label']);
-const ROTATION_MARKER_TYPES = new Set(['text-label']);
+const ROTATION_MARKER_TYPES = VALID_MARKER_TYPES;
 
 export function validateRepositoryData(repositoryData) {
   const errors = [];
@@ -262,16 +275,14 @@ function requireString(errors, value, fieldName) {
 
 function validateMarkerMetadata(errors, marker) {
   if (Object.hasOwn(marker, 'size')) {
-    if (!SIZE_MARKER_TYPES.has(marker.type)) {
-      errors.push(`marker ${marker.id} size is only supported for ceiling-hatch and text-label`);
-    } else if (typeof marker.size !== 'number' || !Number.isFinite(marker.size) || marker.size < 0.5 || marker.size > 2.5) {
+    if (typeof marker.size !== 'number' || !Number.isFinite(marker.size) || marker.size < 0.5 || marker.size > 2.5) {
       errors.push(`marker ${marker.id} size must be between 0.5 and 2.5`);
     }
   }
 
   if (Object.hasOwn(marker, 'rotation')) {
     if (!ROTATION_MARKER_TYPES.has(marker.type)) {
-      errors.push(`marker ${marker.id} rotation is only supported for text-label`);
+      errors.push(`marker ${marker.id} rotation is not supported for marker type ${marker.type}`);
     } else if (typeof marker.rotation !== 'number' || !Number.isFinite(marker.rotation) || marker.rotation < -180 || marker.rotation > 180) {
       errors.push(`marker ${marker.id} rotation must be between -180 and 180`);
     }
@@ -295,7 +306,7 @@ function validateMarkerMetadata(errors, marker) {
     return;
   }
 
-  if (marker.type === 'vertical-route' || marker.type === 'ladder') {
+  if (marker.type === 'vertical-route') {
     if (!VALID_DIRECTIONS.has(marker.direction)) {
       errors.push(`${marker.type} marker ${marker.id} direction must be up or down`);
     }

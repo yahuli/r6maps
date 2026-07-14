@@ -22,7 +22,30 @@ const LABELS = [
   { name: 'blocked', color: '5319e7', description: 'Blocked from automatic merge' },
   { name: 'needs-maintainer-review', color: 'd93f0b', description: 'Requires maintainer review before merge' },
 ]
-const MARKER_TYPES = new Set(['camera', 'ceiling-hatch', 'text-label', 'spawn', 'skylight', 'vertical-route', 'ladder', 'bomb'])
+const MARKER_TYPES = new Set([
+  'camera',
+  'ceiling-hatch',
+  'floor-hatch',
+  'breakable-wall',
+  'line-of-sight-wall',
+  'line-of-sight-floor',
+  'text-label',
+  'spawn',
+  'skylight',
+  'drone-tunnel',
+  'vertical-route',
+  'ladder',
+  'fire-extinguisher',
+  'gas-pipe',
+  'insertion-point',
+  'compass',
+  'wall',
+  'door',
+  'double-door',
+  'window',
+  'double-window',
+  'bomb',
+])
 const MARKER_STATUSES = new Set(['published', 'proposed', 'deprecated'])
 const MARKER_FIELDS = new Set([
   'id',
@@ -1192,7 +1215,7 @@ function validateOptionalMarkerMetadata(marker) {
   if (marker.direction !== undefined && marker.direction !== 'up' && marker.direction !== 'down') {
     throw new ApiError(400, `Invalid direction: ${marker.id}`)
   }
-  if (marker.size !== undefined && (!Number.isFinite(marker.size) || marker.size <= 0 || marker.size > 4)) {
+  if (marker.size !== undefined && (!Number.isFinite(marker.size) || marker.size < 0.5 || marker.size > 2.5)) {
     throw new ApiError(400, `Invalid size: ${marker.id}`)
   }
   if (marker.rotation !== undefined && (!Number.isFinite(marker.rotation) || marker.rotation < -360 || marker.rotation > 360)) {

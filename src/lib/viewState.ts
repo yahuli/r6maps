@@ -189,6 +189,35 @@ export function getPanelFloorIds(floors: MapFloor[], selectedFloorId: string, sp
   })
 }
 
+export function getWorkspacePanelFloorIds(
+  floors: MapFloor[],
+  selectedFloorId: string,
+  split: boolean,
+  secondaryFloorId?: string | null,
+): string[] {
+  const automaticFloorIds = getPanelFloorIds(floors, selectedFloorId, split)
+
+  if (!split) {
+    return automaticFloorIds
+  }
+
+  const validSecondaryFloorId = floors.some(
+    (floor) => floor.id === secondaryFloorId && floor.id !== selectedFloorId,
+  )
+    ? secondaryFloorId
+    : automaticFloorIds.find((floorId) => floorId !== selectedFloorId)
+
+  if (!validSecondaryFloorId || validSecondaryFloorId === selectedFloorId) {
+    return [selectedFloorId]
+  }
+
+  const floorSortById = new Map(floors.map((floor) => [floor.id, floor.sort]))
+
+  return [selectedFloorId, validSecondaryFloorId].sort(
+    (leftId, rightId) => (floorSortById.get(leftId) ?? 0) - (floorSortById.get(rightId) ?? 0),
+  )
+}
+
 export function clampViewerTransform(transform: ViewerTransform): ViewerTransform {
   return {
     ...transform,

@@ -9,15 +9,27 @@ import {
   Maximize2,
   Minus,
   MousePointer2,
-  Pencil,
   Plus,
   RefreshCw,
+  Search,
   Trash2,
   XCircle,
 } from 'lucide-react'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import './App.css'
+import {
+  InspectorTabs,
+  WorkspaceModeSwitch,
+  WorkspaceToolRail,
+  type InspectorTab,
+} from './components/WorkspaceChrome'
 import { loadCommunityMarkers } from './lib/communityMarkers'
+import {
+  resolveSelectedMarker,
+  shouldRestoreAddActionAfterDeleteCleanup,
+  shouldShowDraftMarker,
+  type EditorDraftAction,
+} from './lib/editorState'
 import { createTranslator, localizeEntity } from './lib/i18n'
 import { buildChangeSetPatch, summarizePatchForPreview, type Patch } from './lib/prDraft'
 import {
@@ -34,6 +46,7 @@ import {
   type ProposalSummary,
   type ProposalVoteSummary,
 } from './lib/proposals'
+import { R6CALLS_LEGEND_MARKER_TYPES, hasR6CallsEditSymbol } from './lib/markerVisuals'
 import {
   DEFAULT_SPLIT_VIEW,
   beginReferenceClick,
@@ -41,7 +54,7 @@ import {
   clampViewerTransform,
   getPingMarkerRadius,
   getPingOtherFloorDirection,
-  getPanelFloorIds,
+  getWorkspacePanelFloorIds,
   hasReferencePointerMoved,
   isReferenceClick,
   parseViewerHash,
@@ -63,8 +76,9 @@ type MarkerGlyphData = Pick<CommunityMarker, 'type'> &
   Partial<
     Pick<CommunityMarker, 'siteNumber' | 'siteLetter' | 'spawnNumber' | 'spawnName' | 'direction' | 'label' | 'size' | 'rotation'>
   >
-type ToolDragState = { type: MarkerType; pointerId: number }
-type DraftAction = 'add' | 'delete' | 'update'
+type ToolDragState = { toolId: string; pointerId: number }
+type PendingAddDraft = { clientId: string; draft: DraftMarker }
+type DraftAction = EditorDraftAction
 type AppRoute = { kind: 'viewer' } | { kind: 'proposal-list' } | { kind: 'proposal-detail'; number: number }
 type ProposalListState =
   | { status: 'idle' | 'loading' | 'unavailable' }
@@ -75,29 +89,151 @@ type ProposalDetailState =
   | { status: 'ready'; detail: ProposalDetail }
   | { status: 'error'; message: string }
 
-const MARKER_TOOLS: Array<{ type: MarkerType; labelKey: string }> = [
-  { type: 'camera', labelKey: 'markerTypeCamera' },
-  { type: 'ceiling-hatch', labelKey: 'markerTypeCeilingHatch' },
-  { type: 'text-label', labelKey: 'markerTypeTextLabel' },
-  { type: 'bomb', labelKey: 'markerTypeBomb' },
-  { type: 'spawn', labelKey: 'markerTypeSpawn' },
-  { type: 'skylight', labelKey: 'markerTypeSkylight' },
-  { type: 'vertical-route', labelKey: 'markerTypeVerticalRoute' },
-  { type: 'ladder', labelKey: 'markerTypeLadder' },
+type MarkerToolDefinition = {
+  id: string
+  type: MarkerType
+  labelKey: string
+  defaultLabel: string
+  direction?: MarkerDirection
+}
+
+const R6CALLS_MARKER_TOOLS: MarkerToolDefinition[] = [
+  { id: 'bomb', type: 'bomb', labelKey: 'markerTypeBomb', defaultLabel: 'Bomb' },
+  {
+    id: 'floor-hatch',
+    type: 'floor-hatch',
+    labelKey: 'markerTypeFloorHatch',
+    defaultLabel: 'Floor hatch',
+  },
+  {
+    id: 'ceiling-hatch',
+    type: 'ceiling-hatch',
+    labelKey: 'markerTypeCeilingHatch',
+    defaultLabel: 'Ceiling hatch',
+  },
+  {
+    id: 'breakable-wall',
+    type: 'breakable-wall',
+    labelKey: 'markerTypeBreakableWall',
+    defaultLabel: 'Breakable wall',
+  },
+  {
+    id: 'line-of-sight-wall',
+    type: 'line-of-sight-wall',
+    labelKey: 'markerTypeLineOfSightWall',
+    defaultLabel: 'Line of sight wall',
+  },
+  {
+    id: 'line-of-sight-floor',
+    type: 'line-of-sight-floor',
+    labelKey: 'markerTypeLineOfSightFloor',
+    defaultLabel: 'Line of sight floor',
+  },
+  { id: 'skylight', type: 'skylight', labelKey: 'markerTypeSkylight', defaultLabel: 'Skylight' },
+  {
+    id: 'drone-tunnel',
+    type: 'drone-tunnel',
+    labelKey: 'markerTypeDroneTunnel',
+    defaultLabel: 'Drone tunnel',
+  },
+  {
+    id: 'camera',
+    type: 'camera',
+    labelKey: 'markerTypeCamera',
+    defaultLabel: 'Security camera',
+  },
+  { id: 'ladder', type: 'ladder', labelKey: 'markerTypeLadder', defaultLabel: 'Ladder' },
+  {
+    id: 'fire-extinguisher',
+    type: 'fire-extinguisher',
+    labelKey: 'markerTypeFireExtinguisher',
+    defaultLabel: 'Fire extinguisher',
+  },
+  { id: 'gas-pipe', type: 'gas-pipe', labelKey: 'markerTypeGasPipe', defaultLabel: 'Gas pipe' },
+  {
+    id: 'insertion-point',
+    type: 'insertion-point',
+    labelKey: 'markerTypeInsertionPoint',
+    defaultLabel: 'Insertion point',
+  },
+  { id: 'text-label', type: 'text-label', labelKey: 'markerTypeTextLabel', defaultLabel: 'Label' },
+  { id: 'compass', type: 'compass', labelKey: 'markerTypeCompass', defaultLabel: 'Compass' },
+  { id: 'wall', type: 'wall', labelKey: 'markerTypeWall', defaultLabel: 'Wall' },
+  { id: 'door', type: 'door', labelKey: 'markerTypeDoor', defaultLabel: 'Door' },
+  { id: 'double-door', type: 'double-door', labelKey: 'markerTypeDoubleDoor', defaultLabel: 'Double door' },
+  { id: 'window', type: 'window', labelKey: 'markerTypeWindow', defaultLabel: 'Window' },
+  {
+    id: 'double-window',
+    type: 'double-window',
+    labelKey: 'markerTypeDoubleWindow',
+    defaultLabel: 'Double window',
+  },
 ]
 
-const MARKER_ICON_FILES = {
-  camera: 'security-camera.png',
-  'ceiling-hatch': 'ceiling-hatch.png',
-  skylight: 'skylight@2x.png',
+const EXTRA_MARKER_TOOLS: MarkerToolDefinition[] = [
+  { id: 'spawn', type: 'spawn', labelKey: 'markerTypeSpawn', defaultLabel: '1 - Main Gate' },
+  {
+    id: 'vertical-route-up',
+    type: 'vertical-route',
+    labelKey: 'markerTypeVerticalRouteUp',
+    defaultLabel: 'Vertical route up',
+    direction: 'up',
+  },
+  {
+    id: 'vertical-route-down',
+    type: 'vertical-route',
+    labelKey: 'markerTypeVerticalRouteDown',
+    defaultLabel: 'Vertical route down',
+    direction: 'down',
+  },
+]
+
+const MARKER_TOOLS = [...R6CALLS_MARKER_TOOLS, ...EXTRA_MARKER_TOOLS]
+const MARKER_TOOL_GROUPS: Array<{ labelKey: string; toolIds: string[] }> = [
+  { labelKey: 'toolGroupObjectives', toolIds: ['bomb', 'spawn', 'insertion-point'] },
+  {
+    labelKey: 'toolGroupStructure',
+    toolIds: [
+      'floor-hatch',
+      'ceiling-hatch',
+      'breakable-wall',
+      'line-of-sight-wall',
+      'line-of-sight-floor',
+      'wall',
+      'door',
+      'double-door',
+      'window',
+      'double-window',
+    ],
+  },
+  {
+    labelKey: 'toolGroupFacilities',
+    toolIds: ['skylight', 'drone-tunnel', 'camera', 'ladder', 'fire-extinguisher', 'gas-pipe'],
+  },
+  {
+    labelKey: 'toolGroupCallouts',
+    toolIds: ['text-label', 'compass', 'vertical-route-up', 'vertical-route-down'],
+  },
+]
+const MARKER_DEFAULT_LABELS = new Map<MarkerType, string>()
+for (const tool of MARKER_TOOLS) {
+  if (!MARKER_DEFAULT_LABELS.has(tool.type)) {
+    MARKER_DEFAULT_LABELS.set(tool.type, tool.defaultLabel)
+  }
+}
+const MARKER_TOOL_BY_ID = new Map(MARKER_TOOLS.map((tool) => [tool.id, tool]))
+const R6CALLS_LEGEND_TOOLS = R6CALLS_MARKER_TOOLS.filter((tool) =>
+  R6CALLS_LEGEND_MARKER_TYPES.includes(tool.type as (typeof R6CALLS_LEGEND_MARKER_TYPES)[number]),
+)
+const DIRECTION_ICON_FILES = {
   up: 'up@2x.png',
   down: 'down@2x.png',
-  ladder: 'ladder@2x.png',
 } as const
 
 const DEFAULT_GITHUB_REPOSITORY = 'yahuli/r6maps'
 const COMMUNITY_DATA_ISSUE_LABEL = 'community-data'
 const PENDING_SUBMISSION_KEY = 'r6maps.pendingSubmissionPayload'
+const PENDING_ADD_MARKER_ID_PREFIX = 'pending-add:'
 
 function localizeFloorName(floor: OfficialMap['floors'][number], locale: string, translations: TranslationEntry[]) {
   return localizeEntity({
@@ -144,7 +280,13 @@ function App() {
   const [showOfficialLayer, setShowOfficialLayer] = useState(true)
   const [showCommunityLayer, setShowCommunityLayer] = useState(true)
   const [editMode, setEditMode] = useState(false)
-  const [splitView, setSplitView] = useState(DEFAULT_SPLIT_VIEW)
+  const [splitView, setSplitView] = useState(() =>
+    typeof window === 'undefined' || !window.matchMedia('(max-width: 760px)').matches ? DEFAULT_SPLIT_VIEW : false,
+  )
+  const [secondaryFloorId, setSecondaryFloorId] = useState<string | null>(null)
+  const [legendOpen, setLegendOpen] = useState(false)
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>('markers')
+  const [toolSearch, setToolSearch] = useState('')
   const [referencePoint, setReferencePoint] = useState<ReferencePoint | null>(null)
   const [viewerTransform, setViewerTransform] = useState({ scale: 1, x: 0, y: 0 })
   const panPointer = useRef<{ pointerId: number; x: number; y: number } | null>(null)
@@ -158,14 +300,16 @@ function App() {
     y: 0.36,
   })
   const [draftTranslationLocale, setDraftTranslationLocale] = useState(() => getInitialLocale())
-  const [draftTranslationValue, setDraftTranslationValue] = useState(() => getDefaultDraftTranslation(getInitialLocale()))
+  const [draftTranslationValue, setDraftTranslationValue] = useState('')
   const [draftAction, setDraftAction] = useState<DraftAction>('add')
-  const [pendingAddDraft, setPendingAddDraft] = useState<DraftMarker | null>(null)
+  const [pendingAddDrafts, setPendingAddDrafts] = useState<PendingAddDraft[]>([])
+  const [activeAddDraftId, setActiveAddDraftId] = useState<string | null>(null)
   const [pendingDeleteMarkerIds, setPendingDeleteMarkerIds] = useState<string[]>([])
   const [updatingMarkerId, setUpdatingMarkerId] = useState<string | null>(null)
   const [pendingMarkerUpdates, setPendingMarkerUpdates] = useState<Record<string, DraftMarker>>({})
   const [draggingDraft, setDraggingDraft] = useState(false)
   const [draggingTool, setDraggingTool] = useState<ToolDragState | null>(null)
+  const [activePlacementToolId, setActivePlacementToolId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [submissionNotice, setSubmissionNotice] = useState('')
@@ -179,6 +323,7 @@ function App() {
   const pendingAutoSubmissionAttempted = useRef(false)
   const proposalInitialSelection = useRef<number | null>(null)
   const draftRef = useRef<DraftMarker>(draft)
+  const pendingAddDraftSerial = useRef(0)
 
   useEffect(() => {
     async function loadData() {
@@ -230,12 +375,7 @@ function App() {
     setSelectedFloorId(floorId)
     setEditMode(route.mode === 'edit' && !isCompact)
     setSelectedMarkerId('')
-    setDraftAction('add')
-    setPendingAddDraft(null)
-    setPendingDeleteMarkerIds([])
-    setUpdatingMarkerId(null)
-    setPendingMarkerUpdates({})
-    setSubmitPayloadPreview('')
+    setActivePlacementToolId(null)
 
     if (route.mode === 'edit' && isCompact) {
       const viewHash = buildViewerHash(map.id, floorId, 'view')
@@ -251,12 +391,29 @@ function App() {
   const isProposalRoute = isProposalListRoute || isProposalDetailRoute
   const activeProposalNumber = appRoute.kind === 'proposal-detail' ? appRoute.number : null
   const canEdit = appRoute.kind === 'viewer' && editMode && !isCompact
-  const panelFloorIds = useMemo(
-    () => (selectedMap && selectedFloor ? getPanelFloorIds(selectedMap.floors, selectedFloor.id, splitView) : []),
-    [selectedFloor, selectedMap, splitView],
-  )
+  const panelFloorIds = useMemo(() => {
+    if (!selectedMap || !selectedFloor) {
+      return []
+    }
+
+    return getWorkspacePanelFloorIds(selectedMap.floors, selectedFloor.id, splitView, secondaryFloorId)
+  }, [secondaryFloorId, selectedFloor, selectedMap, splitView])
   const isSplitLayout = splitView && panelFloorIds.length > 1
   const pendingDeleteMarkerIdSet = useMemo(() => new Set(pendingDeleteMarkerIds), [pendingDeleteMarkerIds])
+  const normalizedDraft = normalizeDraftForPatch(draft)
+  const effectivePendingAddDrafts = useMemo(
+    () =>
+      pendingAddDrafts.map((pendingAddDraft) =>
+        draftAction === 'add' && pendingAddDraft.clientId === activeAddDraftId
+          ? { ...pendingAddDraft, draft: normalizedDraft }
+          : pendingAddDraft,
+      ),
+    [activeAddDraftId, draftAction, normalizedDraft, pendingAddDrafts],
+  )
+  const pendingAddMarkers = useMemo(
+    () => effectivePendingAddDrafts.map((pendingAddDraft) => markerFromPendingAddDraft(pendingAddDraft)),
+    [effectivePendingAddDrafts],
+  )
   const markersWithPendingUpdates = useMemo(
     () =>
       markers.map((marker) =>
@@ -276,20 +433,19 @@ function App() {
     : ''
   const visibleMarkers = useMemo(
     () =>
-      markersWithPendingUpdates.filter(
+      [...markersWithPendingUpdates, ...pendingAddMarkers].filter(
         (marker) =>
           marker.mapId === selectedMap?.id &&
           panelFloorIds.includes(marker.floorId) &&
           !pendingDeleteMarkerIdSet.has(marker.id) &&
           (showCommunityLayer || marker.source !== 'community'),
       ),
-    [markersWithPendingUpdates, panelFloorIds, pendingDeleteMarkerIdSet, selectedMap?.id, showCommunityLayer],
+    [markersWithPendingUpdates, panelFloorIds, pendingAddMarkers, pendingDeleteMarkerIdSet, selectedMap?.id, showCommunityLayer],
   )
-  const selectedMarker = visibleMarkers.find((marker) => marker.id === selectedMarkerId) ?? visibleMarkers[0]
+  const selectedMarker = resolveSelectedMarker(visibleMarkers, selectedMarkerId)
   const sourceLabel =
     selectedMap?.source.provider === 'r6maps-legacy' ? t('sourceLegacy') : t('sourceOfficial')
-  const normalizedDraft = normalizeDraftForPatch(draft)
-  const pendingAddDraftForPatch = draftAction === 'add' && pendingAddDraft ? normalizedDraft : pendingAddDraft
+  const pendingAddDraftsForPatch = effectivePendingAddDrafts.map((pendingAddDraft) => pendingAddDraft.draft)
   const effectivePendingMarkerUpdates =
     draftAction === 'update' && updatingMarkerId
       ? {
@@ -300,24 +456,27 @@ function App() {
   const pendingUpdateEntries = Object.entries(effectivePendingMarkerUpdates).filter(
     ([markerId]) => !pendingDeleteMarkerIdSet.has(markerId),
   )
-  const pendingAddCount = pendingAddDraftForPatch ? 1 : 0
+  const pendingAddCount = pendingAddDraftsForPatch.length
   const pendingUpdateCount = pendingUpdateEntries.length
   const pendingDeleteCount = pendingDeleteMarkerIds.length
   const hasPendingChanges = pendingAddCount + pendingUpdateCount + pendingDeleteCount > 0
   const prPatch =
     dataLoaded && hasPendingChanges
       ? buildChangeSetPatch({
-          addDraft: pendingAddDraftForPatch ?? undefined,
+          addDrafts: pendingAddDraftsForPatch,
           updates: pendingUpdateEntries.map(([markerId, pendingDraft]) => ({ markerId, draft: pendingDraft })),
           deleteMarkerIds: pendingDeleteMarkerIds,
           markers,
           translations,
           options: {
             locale: draftTranslationLocale,
-            localizedLabel: draftAction === 'add' ? draftTranslationValue : undefined,
+            localizedLabel:
+              draftAction === 'add' && pendingAddCount === 1 && draftTranslationValue.trim()
+                ? draftTranslationValue.trim()
+                : undefined,
             localizedLabelsByMarkerId:
               draftAction === 'update' && updatingMarkerId && draftTranslationValue.trim()
-                ? { [updatingMarkerId]: draftTranslationValue }
+                ? { [updatingMarkerId]: draftTranslationValue.trim() }
                 : undefined,
             existingTranslations: translations,
           },
@@ -330,6 +489,17 @@ function App() {
     .replace('{update}', String(pendingUpdateCount))
     .replace('{delete}', String(pendingDeleteCount))
   const languageOptions = locales.length > 0 ? locales : [{ id: 'en', name: 'English', nativeName: 'English' }]
+  const visibleToolGroups = useMemo(() => {
+    const query = toolSearch.trim().toLocaleLowerCase()
+
+    return MARKER_TOOL_GROUPS.map((group) => ({
+      ...group,
+      tools: group.toolIds
+        .map((toolId) => MARKER_TOOL_BY_ID.get(toolId))
+        .filter((tool): tool is MarkerToolDefinition => Boolean(tool))
+        .filter((tool) => !query || t(tool.labelKey).toLocaleLowerCase().includes(query)),
+    })).filter((group) => group.tools.length > 0)
+  }, [t, toolSearch])
   const currentViewerHash =
     selectedMap && selectedFloor ? buildViewerHash(selectedMap.id, selectedFloor.id, 'view') : '#calypso-casino/1/all'
   const activeProposalDetail =
@@ -515,6 +685,25 @@ function App() {
   }, [editMode, isCompact])
 
   useEffect(() => {
+    if (isCompact) {
+      setSplitView(false)
+    }
+  }, [isCompact])
+
+  useEffect(() => {
+    if (!hasPendingChanges) {
+      return
+    }
+
+    function warnAboutPendingChanges(event: BeforeUnloadEvent) {
+      event.preventDefault()
+    }
+
+    window.addEventListener('beforeunload', warnAboutPendingChanges)
+    return () => window.removeEventListener('beforeunload', warnAboutPendingChanges)
+  }, [hasPendingChanges])
+
+  useEffect(() => {
     if (!dataLoaded || !submissionApiBase || pendingAutoSubmissionAttempted.current) {
       return
     }
@@ -572,44 +761,52 @@ function App() {
       return next.length === current.length ? current : next
     })
 
-    if (draftAction === 'delete' && pendingDeleteMarkerIds.length === 0) {
+    if (
+      shouldRestoreAddActionAfterDeleteCleanup({
+        draftAction,
+        pendingDeleteCount: pendingDeleteMarkerIds.length,
+        selectedMarkerId,
+      })
+    ) {
       setDraftAction('add')
     }
     if (draftAction === 'update' && updatingMarkerId && !markers.some((marker) => marker.id === updatingMarkerId)) {
       setDraftAction('add')
       setUpdatingMarkerId(null)
     }
-  }, [dataLoaded, draftAction, markers, pendingDeleteMarkerIds.length, updatingMarkerId])
+  }, [dataLoaded, draftAction, markers, pendingDeleteMarkerIds.length, selectedMarkerId, updatingMarkerId])
 
   function handleMapSelect(mapId: string) {
     const nextMap = maps.find((map) => map.id === mapId)
+    persistActiveDraft()
     setSelectedMapId(mapId)
     setSelectedFloorId(nextMap?.floors.find((floor) => floor.id === '1f')?.id ?? nextMap?.floors[0]?.id ?? '1f')
+    setSecondaryFloorId(null)
     setSelectedMarkerId('')
     setDraftAction('add')
-    setPendingAddDraft(null)
-    setPendingDeleteMarkerIds([])
+    setActiveAddDraftId(null)
     setUpdatingMarkerId(null)
-    setPendingMarkerUpdates({})
+    setActivePlacementToolId(null)
     setSubmitPayloadPreview('')
     resetViewerTransform()
   }
 
   function handleFloorSelect(floorId: string) {
+    persistActiveDraft()
     setSelectedFloorId(floorId)
+    setSecondaryFloorId((current) => (current === floorId ? null : current))
     setSelectedMarkerId('')
     setDraftAction('add')
-    setPendingAddDraft(null)
-    setPendingDeleteMarkerIds([])
+    setActiveAddDraftId(null)
     setUpdatingMarkerId(null)
-    setPendingMarkerUpdates({})
+    setActivePlacementToolId(null)
     setSubmitPayloadPreview('')
   }
 
   function handleLocaleChange(locale: string) {
     setSelectedLocale(locale)
     setDraftTranslationLocale(locale)
-    setDraftTranslationValue(getDefaultDraftTranslation(locale))
+    setDraftTranslationValue(resolveMarkerTranslation(translations, updatingMarkerId, locale))
     try {
       localStorage.setItem('r6maps-locale', locale)
     } catch {
@@ -617,9 +814,90 @@ function App() {
     }
   }
 
-  function updateDraftAtCoordinate(mapId: string, floorId: string, x: number, y: number, type?: MarkerType) {
+  function queuePendingAddDraft(nextDraft: DraftMarker) {
+    const activeClientId = activeAddDraftId
+    const activeDraft = normalizeDraftForPatch(draftRef.current)
+    const normalizedNextDraft = normalizeDraftForPatch(nextDraft)
+
+    pendingAddDraftSerial.current += 1
+    const clientId = `add-${pendingAddDraftSerial.current}`
+
+    setPendingAddDrafts((current) => [
+      ...current.map((pendingDraft) =>
+        draftAction === 'add' && activeClientId && pendingDraft.clientId === activeClientId
+          ? { ...pendingDraft, draft: activeDraft }
+          : pendingDraft,
+      ),
+      { clientId, draft: normalizedNextDraft },
+    ])
+    setActiveAddDraftId(clientId)
+    setSelectedMarkerId(pendingAddMarkerId(clientId))
+
+    return clientId
+  }
+
+  function saveActiveAddDraft(nextDraft = draftRef.current) {
+    if (!activeAddDraftId) {
+      return
+    }
+
+    const clientId = activeAddDraftId
+    const normalizedNextDraft = normalizeDraftForPatch(nextDraft)
+
+    setPendingAddDrafts((current) =>
+      current.map((pendingDraft) =>
+        pendingDraft.clientId === clientId ? { ...pendingDraft, draft: normalizedNextDraft } : pendingDraft,
+      ),
+    )
+  }
+
+  function persistActiveDraft() {
+    if (draftAction === 'add' && activeAddDraftId) {
+      saveActiveAddDraft()
+      return
+    }
+
+    if (draftAction === 'update' && updatingMarkerId) {
+      const markerId = updatingMarkerId
+      const nextDraft = normalizeDraftForPatch(draftRef.current)
+      setPendingMarkerUpdates((current) => ({ ...current, [markerId]: nextDraft }))
+    }
+  }
+
+  function handleMarkerSelect(markerId: string) {
+    setActivePlacementToolId(null)
+    const pendingClientId = pendingAddClientIdFromMarkerId(markerId)
+
+    if (pendingClientId) {
+      const pendingDraft = effectivePendingAddDrafts.find((candidate) => candidate.clientId === pendingClientId)
+
+      if (draftAction === 'add' && activeAddDraftId && activeAddDraftId !== pendingClientId) {
+        saveActiveAddDraft()
+      }
+
+      if (pendingDraft) {
+        setSelectedMarkerId(markerId)
+        setDraftAction('add')
+        setActiveAddDraftId(pendingClientId)
+        setUpdatingMarkerId(null)
+        setSubmitPayloadPreview('')
+        draftRef.current = pendingDraft.draft
+        setDraft(pendingDraft.draft)
+      }
+
+      return
+    }
+
+    if (draftAction === 'add' && activeAddDraftId) {
+      saveActiveAddDraft()
+    }
+
+    setSelectedMarkerId(markerId)
+  }
+
+  function updateDraftAtCoordinate(mapId: string, floorId: string, x: number, y: number, tool?: MarkerToolDefinition) {
     setDraft((current) => {
-      const nextDraft = draftAtCoordinate(current, mapId, floorId, x, y, type)
+      const nextDraft = draftAtCoordinate(current, mapId, floorId, x, y, tool)
 
       draftRef.current = nextDraft
 
@@ -644,7 +922,19 @@ function App() {
 
       setDraftAction('add')
       setUpdatingMarkerId(null)
-      setPendingAddDraft(normalizeDraftForPatch(nextDraft))
+      setSubmitPayloadPreview('')
+      if (activeAddDraftId) {
+        setPendingAddDrafts((current) =>
+          current.map((pendingDraft) =>
+            pendingDraft.clientId === activeAddDraftId
+              ? { ...pendingDraft, draft: normalizeDraftForPatch(nextDraft) }
+              : pendingDraft,
+          ),
+        )
+        setSelectedMarkerId(pendingAddMarkerId(activeAddDraftId))
+      } else {
+        queuePendingAddDraft(nextDraft)
+      }
       draftRef.current = nextDraft
       setDraft(nextDraft)
     }
@@ -666,7 +956,13 @@ function App() {
       return
     }
 
-    const existingDraft = pendingMarkerUpdates[marker.id] ?? draftFromCommunityMarker(marker)
+    setActivePlacementToolId(null)
+
+    const pendingClientId = pendingAddClientIdFromMarkerId(marker.id)
+    const pendingAddDraft = pendingClientId
+      ? effectivePendingAddDrafts.find((candidate) => candidate.clientId === pendingClientId)?.draft
+      : undefined
+    const existingDraft = pendingAddDraft ?? pendingMarkerUpdates[marker.id] ?? draftFromCommunityMarker(marker)
     const offsetX = existingDraft.x - x
     const offsetY = existingDraft.y - y
     const nextDraft = {
@@ -681,11 +977,26 @@ function App() {
     event.stopPropagation()
     event.currentTarget.setPointerCapture(event.pointerId)
     draftDragPointer.current = { pointerId: event.pointerId, offsetX, offsetY }
-    if (draftAction === 'add' && pendingAddDraft) {
-      setPendingAddDraft(normalizedDraft)
+
+    if (pendingClientId) {
+      setSelectedMarkerId(marker.id)
+      setDraftAction('add')
+      setActiveAddDraftId(pendingClientId)
+      setUpdatingMarkerId(null)
+      setDraggingDraft(true)
+      setSubmitPayloadPreview('')
+      draftRef.current = nextDraft
+      setDraft(nextDraft)
+      return
     }
+
+    if (draftAction === 'add' && activeAddDraftId) {
+      saveActiveAddDraft()
+    }
+
     setSelectedMarkerId(marker.id)
     setDraftAction('update')
+    setActiveAddDraftId(null)
     setUpdatingMarkerId(marker.id)
     setDraggingDraft(true)
     setDraftTranslationValue(
@@ -736,7 +1047,11 @@ function App() {
         [updatingMarkerId]: normalizeDraftForPatch(draftRef.current),
       }))
     } else if (draftAction === 'add') {
-      setPendingAddDraft(normalizeDraftForPatch(draftRef.current))
+      if (activeAddDraftId) {
+        saveActiveAddDraft()
+      } else {
+        queuePendingAddDraft(draftRef.current)
+      }
     }
     setDraggingDraft(false)
   }
@@ -746,10 +1061,25 @@ function App() {
       return
     }
 
-    if (draftAction === 'add' && pendingAddDraft) {
-      setPendingAddDraft(normalizedDraft)
+    const pendingClientId = pendingAddClientIdFromMarkerId(selectedMarker.id)
+
+    if (pendingClientId) {
+      setDraftAction('delete')
+      setPendingAddDrafts((current) => current.filter((pendingDraft) => pendingDraft.clientId !== pendingClientId))
+      if (activeAddDraftId === pendingClientId) {
+        setActiveAddDraftId(null)
+      }
+      setSelectedMarkerId('')
+      setSubmitPayloadPreview('')
+      return
     }
+
+    if (draftAction === 'add' && activeAddDraftId) {
+      saveActiveAddDraft()
+    }
+
     setDraftAction('delete')
+    setActiveAddDraftId(null)
     setPendingDeleteMarkerIds((current) => (current.includes(selectedMarker.id) ? current : [...current, selectedMarker.id]))
     setSelectedMarkerId('')
     setUpdatingMarkerId(null)
@@ -854,12 +1184,27 @@ function App() {
     <div className={shellClassName}>
       <header className="topbar">
         <div className="brand">
-          <div className="brand-mark">R6</div>
           <div>
-            <h1>R6Maps</h1>
-            <p>{isProposalListRoute ? t('proposals') : isProposalDetailRoute ? t('proposalPreview') : canEdit ? t('editInformation') : t('viewMode')}</p>
+            <h1>R6MAPS</h1>
+            <p>{isProposalListRoute ? t('proposals') : isProposalDetailRoute ? t('proposalPreview') : t('tacticalAtlas')}</p>
           </div>
         </div>
+
+        {!isProposalRoute && (
+          <WorkspaceModeSwitch
+            canEdit={canEdit}
+            compact={isCompact}
+            labels={{ browse: t('browseMode'), edit: t('editMode') }}
+            onChange={(editing) => {
+              if (!editing) {
+                persistActiveDraft()
+              }
+              setActivePlacementToolId(null)
+              setEditMode(editing)
+              setInspectorTab('markers')
+            }}
+          />
+        )}
 
         {!isProposalListRoute && (
           <div className="viewer-controls" aria-label="Map controls">
@@ -895,11 +1240,11 @@ function App() {
             </div>
 
             <button
-              className={splitView ? 'segmented selected' : 'segmented'}
+              className={splitView ? 'segmented split-control selected' : 'segmented split-control'}
               type="button"
               onClick={() => setSplitView((current) => !current)}
             >
-              {splitView ? t('splitView') : t('singleView')}
+              {t('splitView')}
             </button>
 
             <div className="zoom-controls" aria-label="Zoom controls">
@@ -943,24 +1288,10 @@ function App() {
               {t('viewMap')}
             </a>
           ) : (
-            !canEdit && (
-              <a className="primary-button secondary-button" href="#/proposals">
-                <GitPullRequestArrow size={17} />
-                {t('proposals')}
-              </a>
-            )
-          )}
-          {!isProposalRoute && !canEdit && !isCompact && (
-            <button className="primary-button" type="button" onClick={() => setEditMode(true)}>
-              <Pencil size={17} />
-              {t('githubEdit')}
-            </button>
-          )}
-          {!isProposalRoute && canEdit && (
-            <button className="primary-button" type="button" onClick={() => setEditMode(false)}>
-              <Eye size={17} />
-              {t('viewMode')}
-            </button>
+            <a className="utility-link" href="#/proposals" onClick={persistActiveDraft}>
+              <GitPullRequestArrow size={17} />
+              <span>{t('proposals')}</span>
+            </a>
           )}
         </div>
       </header>
@@ -1005,8 +1336,22 @@ function App() {
           <div className={isSplitLayout ? 'map-panes split' : 'map-panes'}>
             {panelFloorIds.map((floorId) => {
               const floor = selectedMap?.floors.find((candidate) => candidate.id === floorId)
-              const hiddenMarkerId = draftAction === 'update' && !draggingDraft ? updatingMarkerId : null
-              const ghostedMarkerId = draftAction === 'update' && draggingDraft ? updatingMarkerId : null
+              const isPrimaryFloorPane = floorId === selectedFloor?.id
+              const otherFloorId = panelFloorIds.find((candidate) => candidate !== floorId)
+              const activePendingAddMarkerId =
+                draftAction === 'add' && activeAddDraftId ? pendingAddMarkerId(activeAddDraftId) : null
+              const hiddenMarkerId =
+                draftAction === 'update' && !draggingDraft
+                  ? updatingMarkerId
+                  : draftAction === 'add'
+                    ? activePendingAddMarkerId
+                    : null
+              const ghostedMarkerId =
+                draftAction === 'update' && draggingDraft
+                  ? updatingMarkerId
+                  : draftAction === 'add' && draggingDraft
+                    ? activePendingAddMarkerId
+                    : null
               const paneMarkers = visibleMarkers.filter(
                 (marker) => marker.floorId === floorId && marker.id !== hiddenMarkerId,
               )
@@ -1015,11 +1360,18 @@ function App() {
                 <MapPane
                   canEdit={canEdit}
                   draft={normalizedDraft}
+                  draftAction={draftAction}
                   draggingDraft={draggingDraft}
                   floor={floor}
                   floorName={floor ? localizeFloorName(floor, selectedLocale, translations) : undefined}
+                  floorOptions={(selectedMap?.floors ?? []).map((candidate) => ({
+                    id: candidate.id,
+                    label: localizeFloorName(candidate, selectedLocale, translations),
+                  }))}
+                  disabledFloorId={otherFloorId}
                   ghostedMarkerId={ghostedMarkerId}
                   isSelectedFloor={floor?.id === selectedFloor?.id}
+                  linkedView={isSplitLayout}
                   key={floorId}
                   mapId={selectedMap?.id ?? ''}
                   markers={paneMarkers}
@@ -1029,23 +1381,38 @@ function App() {
                   t={t}
                   transform={viewerTransform}
                   activeToolPointerId={draggingTool?.pointerId ?? null}
-                  activeToolType={draggingTool?.type ?? null}
+                  activeTool={
+                    draggingTool
+                      ? (MARKER_TOOL_BY_ID.get(draggingTool.toolId) ?? null)
+                      : activePlacementToolId
+                        ? (MARKER_TOOL_BY_ID.get(activePlacementToolId) ?? null)
+                        : null
+                  }
                   onDraftDragMove={moveDraft}
                   onDraftDragStart={startDraftDrag}
                   onDraftDragStop={stopDraftDrag}
                   onDraftLabelChange={(label) => setDraft((current) => ({ ...current, label }))}
-                  onDropTool={(type, mapId, droppedFloorId, x, y) => {
-                    const nextDraft = draftAtCoordinate(draftRef.current, mapId, droppedFloorId, x, y, type)
+                  onDropTool={(tool, mapId, droppedFloorId, x, y) => {
+                    const nextDraft = draftAtCoordinate(draftRef.current, mapId, droppedFloorId, x, y, tool)
 
                     setDraftAction('add')
                     setUpdatingMarkerId(null)
-                    setPendingAddDraft(normalizeDraftForPatch(nextDraft))
+                    setActivePlacementToolId(null)
+                    setDraftTranslationValue('')
                     setSubmitPayloadPreview('')
+                    queuePendingAddDraft(nextDraft)
                     draftRef.current = nextDraft
                     setDraft(nextDraft)
                   }}
-                  onMarkerSelect={setSelectedMarkerId}
+                  onMarkerSelect={handleMarkerSelect}
                   onMarkerDragStart={startMarkerDrag}
+                  onFloorSelect={(nextFloorId) => {
+                    if (isPrimaryFloorPane) {
+                      handleFloorSelect(nextFloorId)
+                    } else {
+                      setSecondaryFloorId(nextFloorId)
+                    }
+                  }}
                   onPanMove={movePan}
                   onPanStart={startPan}
                   onPanStop={stopPan}
@@ -1067,138 +1434,265 @@ function App() {
             })}
           </div>
 
+          <WorkspaceToolRail
+            canDelete={Boolean(selectedMarker)}
+            compact={isCompact}
+            editing={canEdit}
+            labels={{
+              clearReference: t('clearReference'),
+              deleteMarker: t('deleteMarker'),
+              layers: t('layers'),
+              legend: t('markerLegend'),
+              reset: t('resetView'),
+              split: t('splitView'),
+              zoomIn: t('zoomIn'),
+              zoomOut: t('zoomOut'),
+            }}
+            legendOpen={legendOpen}
+            referenceActive={Boolean(referencePoint)}
+            splitView={splitView}
+            onDelete={deleteSelectedMarker}
+            onInspectorLayers={() => setInspectorTab('layers')}
+            onLegendToggle={() => setLegendOpen((current) => !current)}
+            onReferenceClear={() => setReferencePoint(null)}
+            onReset={resetViewerTransform}
+            onSplitToggle={() => setSplitView((current) => !current)}
+            onZoomIn={() => zoomBy(0.15)}
+            onZoomOut={() => zoomBy(-0.15)}
+          />
+
+          {!canEdit && legendOpen && <MarkerReferenceLegend tools={R6CALLS_LEGEND_TOOLS} t={t} />}
+
           <div className="status-strip">
             <span>{selectedMapName || 'Loading maps'}</span>
-            <span>{selectedFloor ? localizeFloorName(selectedFloor, selectedLocale, translations) : t('noFloorSelected')}</span>
-            <span>{sourceLabel}</span>
-            <span>
-              {visibleMarkers.length} {t('visibleMarkers')}
-            </span>
-            <span>{t('coordinates')}</span>
+            <span>{panelFloorIds.map((floorId) => selectedMap?.floors.find((floor) => floor.id === floorId)).filter(Boolean).map((floor) => localizeFloorName(floor!, selectedLocale, translations)).join(' / ') || t('noFloorSelected')}</span>
+            <span className={isSplitLayout ? 'status-sync active' : 'status-sync'}>{isSplitLayout ? t('syncedView') : t('singleView')}</span>
+            <span className="status-source">{sourceLabel}</span>
+            <span>{hasPendingChanges ? pendingChangeSummary : t('noPendingChanges')}</span>
           </div>
         </section>
 
         {canEdit && (
           <aside className="inspector" aria-label="Edit inspector">
-            <section className="panel">
-              <div className="panel-title">
-                <Eye size={16} />
-                {t('layers')}
-              </div>
-              <Toggle checked={showOfficialLayer} label={t('officialBlueprintLayer')} onChange={setShowOfficialLayer} />
-              <Toggle checked={showCommunityLayer} label={t('communityMarkers')} onChange={setShowCommunityLayer} />
-            </section>
+            <InspectorTabs
+              active={inspectorTab}
+              labels={{ markers: t('inspectorMarkers'), layers: t('layers'), changes: t('inspectorChanges') }}
+              onChange={setInspectorTab}
+            />
 
-            <section className="panel">
-              <div className="panel-title">
-                <MousePointer2 size={16} />
-                {t('selectedMarker')}
-              </div>
-              {selectedMarker ? (
-                <div className="marker-detail">
-                  <span className={`marker-badge ${selectedMarker.type}`}>{selectedMarker.type}</span>
-                  <strong>
-                    {formatMarkerDisplayLabel(
-                      selectedMarker,
-                      localizeEntity({
-                        entityType: 'marker',
-                        entityId: selectedMarker.id,
-                        field: 'label',
-                        fallback: selectedMarker.label,
-                        locale: selectedLocale,
-                        translations,
-                      }),
-                      t,
-                    )}
-                  </strong>
-                  <dl>
-                    <div>
-                      <dt>{t('status')}</dt>
-                      <dd>{selectedMarker.status}</dd>
+            <div
+              aria-labelledby={`inspector-tab-${inspectorTab}`}
+              className="inspector-scroll"
+              id="inspector-panel"
+              role="tabpanel"
+              tabIndex={0}
+            >
+              {inspectorTab === 'markers' && (
+                <>
+                  <section className="inspector-section selected-marker-section">
+                    <div className="section-heading">
+                      <MousePointer2 size={16} />
+                      <span>{t('selectedMarker')}</span>
                     </div>
-                    <div>
-                      <dt>{t('position')}</dt>
-                      <dd>
-                        {selectedMarker.x.toFixed(3)}, {selectedMarker.y.toFixed(3)}
-                      </dd>
+                    {selectedMarker ? (
+                      <div className="marker-detail">
+                        <span className={`marker-badge ${selectedMarker.type}`}>{t(markerToolLabelKey(selectedMarker))}</span>
+                        <strong>
+                          {formatMarkerDisplayLabel(
+                            selectedMarker,
+                            localizeEntity({
+                              entityType: 'marker',
+                              entityId: selectedMarker.id,
+                              field: 'label',
+                              fallback: selectedMarker.label,
+                              locale: selectedLocale,
+                              translations,
+                            }),
+                            t,
+                          )}
+                        </strong>
+                        <dl>
+                          <div>
+                            <dt>{t('status')}</dt>
+                            <dd>{selectedMarker.status}</dd>
+                          </div>
+                          <div>
+                            <dt>{t('position')}</dt>
+                            <dd>{selectedMarker.x.toFixed(3)}, {selectedMarker.y.toFixed(3)}</dd>
+                          </div>
+                        </dl>
+                        <button className="danger-button" type="button" onClick={deleteSelectedMarker}>
+                          <Trash2 size={15} />
+                          {t('deleteMarker')}
+                        </button>
+                      </div>
+                    ) : (
+                      <p className="muted">{t('selectMarkerHint')}</p>
+                    )}
+                  </section>
+
+                  <section className="inspector-section marker-library-section">
+                    <div className="section-heading section-heading-stack">
+                      <div>
+                        <strong>{t('addMapMarker')}</strong>
+                        <span>{t('dragMarkerHint')}</span>
+                      </div>
                     </div>
-                    {selectedMarker.type === 'bomb' && (
-                      <div>
-                        <dt>{t('site')}</dt>
-                        <dd>{formatBombMarker(selectedMarker)}</dd>
-                      </div>
-                    )}
-                    {selectedMarker.type === 'spawn' && (
-                      <div>
-                        <dt>{t('spawn')}</dt>
-                        <dd>{formatSpawnMarker(selectedMarker)}</dd>
-                      </div>
-                    )}
-                    {(selectedMarker.type === 'vertical-route' || selectedMarker.type === 'ladder') && (
-                      <div>
-                        <dt>{t('direction')}</dt>
-                        <dd>{directionLabel(selectedMarker.direction, t)}</dd>
-                      </div>
-                    )}
-                  </dl>
-                  <button className="danger-button" type="button" onClick={deleteSelectedMarker}>
-                    <Trash2 size={15} />
-                    {t('deleteMarker')}
-                  </button>
-                </div>
-              ) : (
-                <p className="muted">{t('selectMarkerHint')}</p>
+                    <label className="tool-search">
+                      <Search size={16} />
+                      <input
+                        aria-label={t('searchMarkerTypes')}
+                        placeholder={t('searchMarkerTypes')}
+                        type="search"
+                        value={toolSearch}
+                        onChange={(event) => setToolSearch(event.target.value)}
+                      />
+                    </label>
+                    <div className="tool-groups">
+                      {visibleToolGroups.map((group) => (
+                        <section className="tool-group" key={group.labelKey}>
+                          <h3>{t(group.labelKey)}</h3>
+                          <AnnotationToolbar
+                            tools={group.tools}
+                            selectedToolId={activePlacementToolId}
+                            onSelect={(tool) => {
+                              if (activePlacementToolId === tool.id) {
+                                setActivePlacementToolId(null)
+                                return
+                              }
+
+                              persistActiveDraft()
+                              setDraftAction('add')
+                              setActiveAddDraftId(null)
+                              setUpdatingMarkerId(null)
+                              setActivePlacementToolId(tool.id)
+                              setDraftTranslationValue('')
+                              setDraft((current) => draftWithToolDefaults(current, tool))
+                            }}
+                            onToolDragStart={(toolId, pointerId) => setDraggingTool({ toolId, pointerId })}
+                            onToolDragEnd={(pointerId) =>
+                              setDraggingTool((current) =>
+                                pointerId == null || current?.pointerId === pointerId ? null : current,
+                              )
+                            }
+                            t={t}
+                          />
+                        </section>
+                      ))}
+                      {visibleToolGroups.length === 0 && <p className="tool-empty">{t('noMarkerTypesFound')}</p>}
+                    </div>
+                  </section>
+
+                  <section className="inspector-section marker-properties-section">
+                    <div className="section-heading">
+                      <GitPullRequestArrow size={16} />
+                      <span>{t('markerProperties')}</span>
+                    </div>
+                    <label className="field">
+                      <span>{t('label')}</span>
+                      <input value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} />
+                    </label>
+                    <MarkerMetadataFields draft={draft} t={t} onChange={(nextDraft) => setDraft(syncDraftLabel(nextDraft))} />
+                  </section>
+                </>
               )}
-            </section>
 
-            <section className="panel">
-              <div className="panel-title">
-                <GitPullRequestArrow size={16} />
-                {t('draftPr')}
-              </div>
-              <label className="field">
-                <span>{t('label')}</span>
-                <input value={draft.label} onChange={(event) => setDraft({ ...draft, label: event.target.value })} />
-              </label>
-              <label className="field">
-                <span>{t('type')}</span>
-                <AnnotationToolbar
-                  selectedType={draft.type}
-                  onSelect={(type) => setDraft((current) => draftWithTypeDefaults(current, type))}
-                  onToolDragStart={(type, pointerId) => setDraggingTool({ type, pointerId })}
-                  onToolDragEnd={(pointerId) =>
-                    setDraggingTool((current) => (pointerId == null || current?.pointerId === pointerId ? null : current))
-                  }
-                  t={t}
-                />
-              </label>
-              <MarkerMetadataFields draft={draft} t={t} onChange={(nextDraft) => setDraft(syncDraftLabel(nextDraft))} />
-              <label className="field">
-                <span>{t('translationLocale')}</span>
-                <select
-                  value={draftTranslationLocale}
-                  onChange={(event) => {
-                    setDraftTranslationLocale(event.target.value)
-                    setDraftTranslationValue(getDefaultDraftTranslation(event.target.value))
-                  }}
-                >
-                  {languageOptions.map((locale) => (
-                    <option key={locale.id} value={locale.id}>
-                      {locale.nativeName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="field">
-                <span>{t('localizedLabel')}</span>
-                <input
-                  value={draftTranslationValue}
-                  onChange={(event) => setDraftTranslationValue(event.target.value)}
-                  placeholder={draft.label}
-                />
-              </label>
+              {inspectorTab === 'layers' && (
+                <>
+                  <section className="inspector-section">
+                    <div className="section-heading">
+                      <Eye size={16} />
+                      <span>{t('layers')}</span>
+                    </div>
+                    <Toggle checked={showOfficialLayer} label={t('officialBlueprintLayer')} onChange={setShowOfficialLayer} />
+                    <Toggle checked={showCommunityLayer} label={t('communityMarkers')} onChange={setShowCommunityLayer} />
+                  </section>
+                  <section className="inspector-section layer-summary">
+                    <div className="section-heading">
+                      <FileJson size={16} />
+                      <span>{t('mapContext')}</span>
+                    </div>
+                    <dl>
+                      <div><dt>{t('officialMaps')}</dt><dd>{selectedMapName}</dd></div>
+                      <div><dt>{t('visibleMarkers')}</dt><dd>{visibleMarkers.length}</dd></div>
+                      <div><dt>{t('splitView')}</dt><dd>{isSplitLayout ? t('syncedView') : t('singleView')}</dd></div>
+                    </dl>
+                    <p>{sourceLabel}</p>
+                  </section>
+                </>
+              )}
+
+              {inspectorTab === 'changes' && (
+                <>
+                  <section className="inspector-section">
+                    <div className="section-heading">
+                      <GitPullRequestArrow size={16} />
+                      <span>{t('inspectorChanges')}</span>
+                    </div>
+                    <label className="field">
+                      <span>{t('translationLocale')}</span>
+                      <select
+                        value={draftTranslationLocale}
+                        onChange={(event) => {
+                          setDraftTranslationLocale(event.target.value)
+                          setDraftTranslationValue(
+                            resolveMarkerTranslation(translations, updatingMarkerId, event.target.value),
+                          )
+                        }}
+                      >
+                        {languageOptions.map((locale) => (
+                          <option key={locale.id} value={locale.id}>{locale.nativeName}</option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="field">
+                      <span>{t('localizedLabel')}</span>
+                      <input
+                        value={draftTranslationValue}
+                        onChange={(event) => setDraftTranslationValue(event.target.value)}
+                        placeholder={draft.label}
+                      />
+                    </label>
+                    <div className={pendingDeleteCount > 0 ? 'patch-mode delete' : pendingUpdateCount > 0 ? 'patch-mode update' : 'patch-mode'}>
+                      {hasPendingChanges ? pendingChangeSummary : t('noPendingChanges')}
+                    </div>
+                    <pre className="patch-preview">
+                      {prPatch
+                        ? JSON.stringify(summarizePatchForPreview(prPatch), null, 2)
+                        : dataLoaded
+                          ? t('noPatchQueued')
+                          : t('loadingRepositoryData')}
+                    </pre>
+                    {submissionNotice && (
+                      <p className="patch-preview-hint">
+                        {createdPullRequestUrl ? (
+                          <a href={createdPullRequestUrl} rel="noreferrer" target="_blank">{submissionNotice}</a>
+                        ) : submissionNotice}
+                      </p>
+                    )}
+                    {submitPayloadPreview && (
+                      <details className="advanced-change-data">
+                        <summary>{t('manualPayloadCopyHint')}</summary>
+                        <pre className="patch-preview">{submitPayloadPreview}</pre>
+                      </details>
+                    )}
+                  </section>
+                  <details className="inspector-section advanced-change-data">
+                    <summary>{t('repositoryData')}</summary>
+                    <div className="repo-tree">
+                      <span>public/data/official/maps.json</span>
+                      <span>public/data/community/markers/index.json</span>
+                      <span>public/data/community/markers/{'{mapId}'}.json</span>
+                    </div>
+                  </details>
+                </>
+              )}
+            </div>
+
+            <footer className="inspector-submit-bar">
+              <span>{hasPendingChanges ? pendingChangeSummary : t('noPendingChanges')}</span>
               <button
-                className="primary-button patch-copy-button"
+                className="primary-button"
                 type="button"
                 disabled={!canSubmitChanges || submitting}
                 onClick={submitChanges}
@@ -1206,50 +1700,7 @@ function App() {
                 <GitPullRequestArrow size={17} />
                 {submitting ? t('submittingChanges') : copied ? t('copiedPatch') : t('submitChanges')}
               </button>
-              {submissionNotice && (
-                <p className="patch-preview-hint">
-                  {createdPullRequestUrl ? (
-                    <a href={createdPullRequestUrl} rel="noreferrer" target="_blank">
-                      {submissionNotice}
-                    </a>
-                  ) : (
-                    submissionNotice
-                  )}
-                </p>
-              )}
-              <pre className="patch-preview">
-                {prPatch
-                  ? JSON.stringify(summarizePatchForPreview(prPatch), null, 2)
-                  : dataLoaded
-                    ? t('noPatchQueued')
-                    : t('loadingRepositoryData')}
-              </pre>
-              {submitPayloadPreview && (
-                <>
-                  <p className="patch-preview-hint">{t('manualPayloadCopyHint')}</p>
-                  <pre className="patch-preview">{submitPayloadPreview}</pre>
-                </>
-              )}
-              <div
-                className={
-                  pendingDeleteCount > 0 ? 'patch-mode delete' : pendingUpdateCount > 0 ? 'patch-mode update' : 'patch-mode'
-                }
-              >
-                {hasPendingChanges ? pendingChangeSummary : t('noPatchQueued')}
-              </div>
-            </section>
-
-            <section className="panel">
-              <div className="panel-title">
-                <FileJson size={16} />
-                {t('repositoryData')}
-              </div>
-              <div className="repo-tree">
-                <span>public/data/official/maps.json</span>
-                <span>public/data/community/markers/index.json</span>
-                <span>public/data/community/markers/{'{mapId}'}.json</span>
-              </div>
-            </section>
+            </footer>
           </aside>
         )}
           </>
@@ -1413,9 +1864,10 @@ function ProposalPreviewWorkspace({
             return (
               <MapPane
                 activeToolPointerId={null}
-                activeToolType={null}
+                activeTool={null}
                 canEdit={false}
                 draft={previewDraft}
+                draftAction="delete"
                 draggingDraft={false}
                 floor={floor}
                 floorName={floor ? localizeFloorName(floor, selectedLocale, translations) : undefined}
@@ -1659,16 +2111,20 @@ function ProposalEmptyState({ icon, title, message }: { icon: ReactNode; title: 
 
 function MapPane({
   activeToolPointerId,
-  activeToolType,
+  activeTool,
   canEdit,
   draft,
+  draftAction,
   draggingDraft,
+  disabledFloorId,
   floor,
   floorName,
+  floorOptions,
   ghostedMarkerId,
   getMarkerLabel,
   getMarkerDiffKind,
   isSelectedFloor,
+  linkedView,
   mapId,
   markers,
   referencePoint,
@@ -1681,6 +2137,7 @@ function MapPane({
   onDraftDragStop,
   onDraftLabelChange,
   onDropTool,
+  onFloorSelect,
   onMarkerDragStart,
   onMarkerSelect,
   onPanMove,
@@ -1691,16 +2148,20 @@ function MapPane({
   onWheelZoom,
 }: {
   activeToolPointerId: number | null
-  activeToolType: MarkerType | null
+  activeTool: MarkerToolDefinition | null
   canEdit: boolean
   draft: DraftMarker
+  draftAction: DraftAction
   draggingDraft: boolean
+  disabledFloorId?: string
   floor?: { id: string; name: string; image?: string; sort: number }
   floorName?: string
+  floorOptions?: Array<{ id: string; label: string }>
   ghostedMarkerId: string | null
   getMarkerLabel: (marker: CommunityMarker) => string
   getMarkerDiffKind?: (marker: CommunityMarker) => ProposalMarkerDiffKind | undefined
   isSelectedFloor: boolean
+  linkedView?: boolean
   mapId: string
   markers: CommunityMarker[]
   referencePoint: ReferencePoint | null
@@ -1712,7 +2173,8 @@ function MapPane({
   onDraftDragStart: (event: React.PointerEvent<SVGGElement>, mapId: string, floorId: string, x: number, y: number) => void
   onDraftDragStop: (event: React.PointerEvent<SVGElement>) => void
   onDraftLabelChange: (label: string) => void
-  onDropTool: (type: MarkerType, mapId: string, floorId: string, x: number, y: number) => void
+  onDropTool: (tool: MarkerToolDefinition, mapId: string, floorId: string, x: number, y: number) => void
+  onFloorSelect?: (floorId: string) => void
   onMarkerDragStart: (
     event: React.PointerEvent<SVGGElement>,
     marker: CommunityMarker,
@@ -1745,16 +2207,40 @@ function MapPane({
     }
   }
 
-  const showDraft = canEdit && floor && draft.mapId === mapId && draft.floorId === floor.id
+  const showDraft = shouldShowDraftMarker({
+    canEdit,
+    draft,
+    draftAction,
+    floorId: floor?.id,
+    hasFloor: Boolean(floor),
+    mapId,
+  })
   const displayFloorName = floorName ?? t('noFloorSelected')
 
   return (
     <article className="map-pane" aria-label={displayFloorName}>
-      <div className={isSelectedFloor ? 'pane-title selected' : 'pane-title'}>{displayFloorName}</div>
+      <div className="pane-header">
+        {floor && floorOptions && onFloorSelect ? (
+          <label className={isSelectedFloor ? 'pane-title selected' : 'pane-title'}>
+            <span className="sr-only">{t('floor')}</span>
+            <select value={floor.id} onChange={(event) => onFloorSelect(event.target.value)}>
+              {floorOptions.map((option) => (
+                <option disabled={option.id === disabledFloorId} key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className={isSelectedFloor ? 'pane-title selected' : 'pane-title'}>{displayFloorName}</div>
+        )}
+        {linkedView && <span className="pane-sync-indicator">{t('syncedView')}</span>}
+      </div>
       <svg
         className="blueprint"
         viewBox="0 0 1000 620"
-        role="img"
+        preserveAspectRatio="xMidYMid slice"
+        role="group"
         aria-label={displayFloorName}
         onDragOver={(event) => {
           if (canEdit) {
@@ -1766,19 +2252,22 @@ function MapPane({
             return
           }
 
+          const markerToolId = event.dataTransfer.getData('application/x-r6maps-marker-tool-id')
           const markerType = event.dataTransfer.getData('application/x-r6maps-marker-type') as MarkerType
-          if (!markerType) {
+          const tool = MARKER_TOOL_BY_ID.get(markerToolId) ?? MARKER_TOOLS.find((candidate) => candidate.type === markerType)
+
+          if (!tool) {
             return
           }
 
           event.preventDefault()
           const point = coordinateFromClient(event.clientX, event.clientY)
-          onDropTool(markerType, mapId, floor.id, point.x, point.y)
+          onDropTool(tool, mapId, floor.id, point.x, point.y)
           onToolDragEnd()
         }}
         onPointerDown={(event) => {
           referenceClickCandidate.current =
-            floor && !activeToolType && !draggingDraft && !isReferenceBlockedTarget(event.target)
+            floor && !draggingDraft && !isReferenceBlockedTarget(event.target)
               ? beginReferenceClick(event, {
                   ...coordinateFromClient(event.clientX, event.clientY),
                   originFloorId: floor.id,
@@ -1800,9 +2289,21 @@ function MapPane({
         onPointerUp={(event) => {
           onDraftDragStop(event)
           onPanStop(event)
-          const blocked = !floor || Boolean(activeToolType) || draggingDraft || isReferenceBlockedTarget(event.target)
+          const blocked = !floor || draggingDraft || isReferenceBlockedTarget(event.target)
           const candidate = referenceClickCandidate.current
           referenceClickCandidate.current = null
+          if (
+            candidate &&
+            floor &&
+            canEdit &&
+            activeTool &&
+            activeToolPointerId === null &&
+            isReferenceClick(candidate, event, blocked)
+          ) {
+            const point = coordinateFromClient(event.clientX, event.clientY)
+            onDropTool(activeTool, mapId, floor.id, point.x, point.y)
+            return
+          }
           if (candidate && floor && isReferenceClick(candidate, event, blocked)) {
             const point = coordinateFromClient(event.clientX, event.clientY)
             onReferencePointChange({
@@ -1813,12 +2314,12 @@ function MapPane({
           }
         }}
         onPointerUpCapture={(event) => {
-          if (!canEdit || !floor || !activeToolType || activeToolPointerId !== event.pointerId) {
+          if (!canEdit || !floor || !activeTool || activeToolPointerId !== event.pointerId) {
             return
           }
 
           const point = coordinateFromClient(event.clientX, event.clientY)
-          onDropTool(activeToolType, mapId, floor.id, point.x, point.y)
+          onDropTool(activeTool, mapId, floor.id, point.x, point.y)
           onToolDragEnd()
           event.stopPropagation()
         }}
@@ -1860,7 +2361,7 @@ function MapPane({
               onSelect={() => onMarkerSelect(marker.id)}
             />
           ))}
-          {showDraft && (
+          {showDraft && floor && (
             <g
               className={draggingDraft ? 'draft-marker dragging' : 'draft-marker'}
               transform={`translate(${draft.x * 1000} ${draft.y * 620})`}
@@ -1876,7 +2377,7 @@ function MapPane({
               onPointerCancel={onDraftDragStop}
             >
               {draft.type === 'text-label' ? (
-                <g transform={`rotate(${textLabelRotation(draft)}) scale(${textLabelSize(draft)})`}>
+                <g transform={`rotate(${markerRotation(draft)}) scale(${markerSize(draft)})`}>
                   <foreignObject x="-75" y="-18" width="150" height="38">
                     <input
                       aria-label={t('textLabel')}
@@ -1896,7 +2397,7 @@ function MapPane({
               ) : (
                 <>
                   <title>{formatMarkerDisplayLabel(draft, undefined, t)}</title>
-                  <circle r={draft.type === 'ceiling-hatch' ? 14 * (draft.size ?? 1) : 14} />
+                  <circle className="marker-hit-area" r={markerHitRadius(draft)} />
                   <MarkerSymbol marker={draft} />
                 </>
               )}
@@ -1982,45 +2483,52 @@ function Toggle({
 function AnnotationToolbar({
   onToolDragEnd,
   onToolDragStart,
-  selectedType,
+  selectedToolId,
+  tools,
   onSelect,
   t,
 }: {
   onToolDragEnd?: (pointerId?: number) => void
-  onToolDragStart?: (type: MarkerType, pointerId: number) => void
-  selectedType: MarkerType
-  onSelect: (type: MarkerType) => void
+  onToolDragStart?: (toolId: string, pointerId: number) => void
+  selectedToolId: string | null
+  tools?: MarkerToolDefinition[]
+  onSelect: (tool: MarkerToolDefinition) => void
   t: (key: string) => string
 }) {
+  const availableTools = tools ?? MARKER_TOOLS
+
   return (
     <div className="annotation-toolbar" role="toolbar" aria-label="Annotation tools">
-      {MARKER_TOOLS.map((tool) => {
+      {availableTools.map((tool) => {
         const label = t(tool.labelKey)
+        const selected = tool.id === selectedToolId
 
         return (
           <button
-            aria-pressed={selectedType === tool.type}
-            className={selectedType === tool.type ? 'annotation-tool selected' : 'annotation-tool'}
+            aria-label={label}
+            aria-pressed={selected}
+            className={selected ? 'annotation-tool selected' : 'annotation-tool'}
             draggable
-            key={tool.type}
+            key={tool.id}
             title={label}
             type="button"
-            onClick={() => onSelect(tool.type)}
+            onClick={() => onSelect(tool)}
             onPointerDown={(event) => {
               if (event.button === 0) {
-                onToolDragStart?.(tool.type, event.pointerId)
+                onToolDragStart?.(tool.id, event.pointerId)
               }
             }}
             onPointerUp={(event) => onToolDragEnd?.(event.pointerId)}
             onPointerCancel={(event) => onToolDragEnd?.(event.pointerId)}
             onDragEnd={() => onToolDragEnd?.()}
             onDragStart={(event) => {
+              event.dataTransfer.setData('application/x-r6maps-marker-tool-id', tool.id)
               event.dataTransfer.setData('application/x-r6maps-marker-type', tool.type)
               event.dataTransfer.effectAllowed = 'copy'
             }}
           >
             <svg viewBox="-18 -18 36 36" aria-hidden="true">
-              <MarkerSymbol compact marker={draftPreviewForType(tool.type)} />
+              <MarkerSymbol compact marker={draftPreviewForTool(tool)} />
             </svg>
             <span>{label}</span>
           </button>
@@ -2039,9 +2547,11 @@ function MarkerMetadataFields({
   t: (key: string) => string
   onChange: (draft: DraftMarker) => void
 }) {
+  let typeSpecificFields: ReactNode = null
+
   if (draft.type === 'bomb') {
-    return (
-      <div className="metadata-grid">
+    typeSpecificFields = (
+      <>
         <label className="field compact-field">
           <span>{t('siteNumber')}</span>
           <input
@@ -2071,13 +2581,11 @@ function MarkerMetadataFields({
             <option value="B">B</option>
           </select>
         </label>
-      </div>
+      </>
     )
-  }
-
-  if (draft.type === 'spawn') {
-    return (
-      <div className="metadata-grid">
+  } else if (draft.type === 'spawn') {
+    typeSpecificFields = (
+      <>
         <label className="field compact-field">
           <span>{t('spawnNumber')}</span>
           <input
@@ -2096,141 +2604,137 @@ function MarkerMetadataFields({
           <span>{t('spawnName')}</span>
           <input value={draft.spawnName ?? ''} onChange={(event) => onChange({ ...draft, spawnName: event.target.value })} />
         </label>
-      </div>
+      </>
+    )
+  } else if (draft.type === 'vertical-route') {
+    typeSpecificFields = (
+      <>
+        <label className="field compact-field wide-field">
+          <span>{t('direction')}</span>
+          <select
+            value={draft.direction ?? 'up'}
+            onChange={(event) =>
+              onChange({
+                ...draft,
+                direction: event.target.value === 'down' ? 'down' : 'up',
+              })
+            }
+          >
+            <option value="up">{t('directionUp')}</option>
+            <option value="down">{t('directionDown')}</option>
+          </select>
+        </label>
+      </>
     )
   }
 
-  if (draft.type === 'vertical-route' || draft.type === 'ladder') {
-    return (
-      <label className="field">
-        <span>{t('direction')}</span>
-        <select
-          value={draft.direction ?? 'up'}
+  return (
+    <div className="metadata-grid marker-size-grid">
+      {typeSpecificFields}
+      <MarkerSizeFields
+        draft={draft}
+        label={draft.type === 'text-label' ? t('textLabelSize') : t('markerSize')}
+        onChange={onChange}
+      />
+      <MarkerRotationFields draft={draft} t={t} onChange={onChange} />
+    </div>
+  )
+}
+
+function MarkerSizeFields({
+  draft,
+  label,
+  onChange,
+}: {
+  draft: DraftMarker
+  label: string
+  onChange: (draft: DraftMarker) => void
+}) {
+  const size = markerSize(draft)
+
+  return (
+    <>
+      <label className="field compact-field wide-field">
+        <span>{label}</span>
+        <input
+          max="2.5"
+          min="0.5"
+          step="0.1"
+          type="range"
+          value={size}
           onChange={(event) =>
             onChange({
               ...draft,
-              direction: event.target.value === 'down' ? 'down' : 'up',
+              size: normalizedSizeFromInput(event.target.value, size),
             })
           }
-        >
-          <option value="up">{t('directionUp')}</option>
-          <option value="down">{t('directionDown')}</option>
-        </select>
+        />
       </label>
-    )
-  }
+      <label className="field compact-field">
+        <span>{label}</span>
+        <input
+          max="2.5"
+          min="0.5"
+          step="0.1"
+          type="number"
+          value={size}
+          onChange={(event) =>
+            onChange({
+              ...draft,
+              size: normalizedSizeFromInput(event.target.value, size),
+            })
+          }
+        />
+      </label>
+    </>
+  )
+}
 
-  if (draft.type === 'ceiling-hatch') {
-    return (
-      <div className="metadata-grid hatch-size-grid">
-        <label className="field compact-field wide-field">
-          <span>{t('hatchSize')}</span>
-          <input
-            max="2.5"
-            min="0.5"
-            step="0.1"
-            type="range"
-            value={draft.size ?? 1}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                size: normalizedSizeFromInput(event.target.value, draft.size ?? 1),
-              })
-            }
-          />
-        </label>
-        <label className="field compact-field">
-          <span>{t('hatchSize')}</span>
-          <input
-            max="2.5"
-            min="0.5"
-            step="0.1"
-            type="number"
-            value={draft.size ?? 1}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                size: normalizedSizeFromInput(event.target.value, draft.size ?? 1),
-              })
-            }
-          />
-        </label>
-      </div>
-    )
-  }
-
-  if (draft.type === 'text-label') {
-    return (
-      <div className="metadata-grid text-label-controls">
-        <label className="field compact-field wide-field">
-          <span>{t('textLabelSize')}</span>
-          <input
-            max="2.5"
-            min="0.5"
-            step="0.1"
-            type="range"
-            value={textLabelSize(draft)}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                size: normalizedSizeFromInput(event.target.value, textLabelSize(draft)),
-              })
-            }
-          />
-        </label>
-        <label className="field compact-field">
-          <span>{t('textLabelSize')}</span>
-          <input
-            max="2.5"
-            min="0.5"
-            step="0.1"
-            type="number"
-            value={textLabelSize(draft)}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                size: normalizedSizeFromInput(event.target.value, textLabelSize(draft)),
-              })
-            }
-          />
-        </label>
-        <label className="field compact-field wide-field">
-          <span>{t('textLabelRotation')}</span>
-          <input
-            max="180"
-            min="-180"
-            step="1"
-            type="range"
-            value={textLabelRotation(draft)}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                rotation: normalizedRotationFromInput(event.target.value, textLabelRotation(draft)),
-              })
-            }
-          />
-        </label>
-        <label className="field compact-field">
-          <span>{t('textLabelRotation')}</span>
-          <input
-            max="180"
-            min="-180"
-            step="1"
-            type="number"
-            value={textLabelRotation(draft)}
-            onChange={(event) =>
-              onChange({
-                ...draft,
-                rotation: normalizedRotationFromInput(event.target.value, textLabelRotation(draft)),
-              })
-            }
-          />
-        </label>
-      </div>
-    )
-  }
-
-  return null
+function MarkerRotationFields({
+  draft,
+  t,
+  onChange,
+}: {
+  draft: DraftMarker
+  t: (key: string) => string
+  onChange: (draft: DraftMarker) => void
+}) {
+  return (
+    <>
+      <label className="field compact-field wide-field">
+        <span>{t('textLabelRotation')}</span>
+        <input
+          max="180"
+          min="-180"
+          step="1"
+          type="range"
+          value={markerRotation(draft)}
+          onChange={(event) =>
+            onChange({
+              ...draft,
+              rotation: normalizedRotationFromInput(event.target.value, markerRotation(draft)),
+            })
+          }
+        />
+      </label>
+      <label className="field compact-field">
+        <span>{t('textLabelRotation')}</span>
+        <input
+          max="180"
+          min="-180"
+          step="1"
+          type="number"
+          value={markerRotation(draft)}
+          onChange={(event) =>
+            onChange({
+              ...draft,
+              rotation: normalizedRotationFromInput(event.target.value, markerRotation(draft)),
+            })
+          }
+        />
+      </label>
+    </>
+  )
 }
 
 function useCompactViewport() {
@@ -2262,7 +2766,7 @@ function BlueprintRooms({ floor, showOfficialLayer }: { floor?: { image?: string
         href={`${import.meta.env.BASE_URL}${floor.image}`}
         width="1000"
         height="620"
-        preserveAspectRatio="xMidYMid meet"
+        preserveAspectRatio="xMidYMid slice"
       />
     )
   }
@@ -2306,7 +2810,7 @@ function MarkerNode({
   onSelect: () => void
 }) {
   const displayLabel = formatMarkerDisplayLabel(marker, label, t)
-  const markerRadius = marker.type === 'ceiling-hatch' ? 13 * (marker.size ?? 1) : 13
+  const markerExtent = 13 * markerSize(marker)
   const className = [
     'map-marker',
     marker.type,
@@ -2400,9 +2904,9 @@ function MarkerNode({
       transform={`translate(${marker.x * 1000} ${marker.y * 620})`}
     >
       <title>{displayLabel}</title>
-      <circle r={markerRadius} />
+      <circle className="marker-hit-area" r={markerHitRadius(marker)} />
       <MarkerSymbol marker={marker} />
-      <foreignObject className="marker-popover-shell" x="18" y="-31" width="190" height="62">
+      <foreignObject className="marker-popover-shell" x={markerExtent + 5} y="-31" width="190" height="62">
         <div className="marker-popover">{displayLabel}</div>
       </foreignObject>
     </g>
@@ -2410,64 +2914,244 @@ function MarkerNode({
 }
 
 function TextLabelTransform({ children, marker }: { children: ReactNode; marker: MarkerGlyphData }) {
-  return <g transform={`rotate(${textLabelRotation(marker)}) scale(${textLabelSize(marker)})`}>{children}</g>
+  return <g transform={`rotate(${markerRotation(marker)}) scale(${markerSize(marker)})`}>{children}</g>
+}
+
+function MarkerReferenceLegend({ tools, t }: { tools: MarkerToolDefinition[]; t: (key: string) => string }) {
+  return (
+    <aside className="marker-reference-legend" aria-label={t('markerLegend')}>
+      <div className="marker-reference-title">{t('markerLegend')}</div>
+      <ul>
+        {tools.map((tool) => (
+          <li key={tool.id}>
+            <svg aria-hidden="true" viewBox="-18 -18 36 36">
+              <MarkerSymbol compact marker={draftPreviewForTool(tool)} />
+            </svg>
+            <span>{t(tool.labelKey)}</span>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  )
 }
 
 function MarkerSymbol({ marker, compact = false }: { marker: MarkerGlyphData; compact?: boolean }) {
   const iconSize = compact ? 24 : 26
   const iconOffset = -iconSize / 2
 
-  if (marker.type === 'camera') {
-    return <MarkerIcon file={MARKER_ICON_FILES.camera} offset={iconOffset} size={iconSize} />
-  }
-
-  if (marker.type === 'ceiling-hatch') {
-    const hatchSize = compact ? iconSize : iconSize * (marker.size ?? 1)
-
-    return <MarkerIcon file={MARKER_ICON_FILES['ceiling-hatch']} offset={-hatchSize / 2} size={hatchSize} />
-  }
-
-  if (marker.type === 'skylight') {
-    return <MarkerIcon file={MARKER_ICON_FILES.skylight} offset={iconOffset} size={iconSize} />
+  if (hasR6CallsEditSymbol(marker.type)) {
+    return (
+      <MarkerSymbolTransform marker={marker}>
+        <R6CallsEditSymbol marker={marker} />
+      </MarkerSymbolTransform>
+    )
   }
 
   if (marker.type === 'vertical-route') {
-    return <MarkerIcon file={directionIconFile(marker.direction)} offset={iconOffset} size={iconSize} />
-  }
-
-  if (marker.type === 'ladder') {
     return (
-      <g className="marker-symbol ladder-symbol">
-        <MarkerIcon file={MARKER_ICON_FILES.ladder} offset={-13} size={26} />
-        <MarkerIcon className="direction-cue" file={directionIconFile(marker.direction)} offset={2} size={12} />
-      </g>
-    )
-  }
-
-  if (marker.type === 'bomb') {
-    return (
-      <g className="marker-symbol badge-symbol bomb-symbol">
-        <rect x="-15" y="-10" width="30" height="20" rx="8" />
-        <text y="4">{formatBombMarker(marker)}</text>
-      </g>
-    )
-  }
-
-  if (marker.type === 'text-label') {
-    return (
-      <g className="marker-symbol badge-symbol text-label-symbol">
-        <rect x="-15" y="-10" width="30" height="20" rx="7" />
-        <text y="4">Aa</text>
-      </g>
+      <MarkerSymbolTransform marker={marker}>
+        <MarkerIcon file={directionIconFile(marker.direction)} offset={iconOffset} size={iconSize} />
+      </MarkerSymbolTransform>
     )
   }
 
   return (
-    <g className="marker-symbol badge-symbol spawn-symbol">
-      <rect x="-13" y="-10" width="26" height="20" rx="8" />
-      <text y="4">{marker.spawnNumber ?? 1}</text>
+    <MarkerSymbolTransform marker={marker}>
+      <g className="marker-symbol badge-symbol spawn-symbol">
+        <rect x="-13" y="-10" width="26" height="20" rx="8" />
+        <text y="4">{marker.spawnNumber ?? 1}</text>
+      </g>
+    </MarkerSymbolTransform>
+  )
+}
+
+const R6CALLS_GAS_PIPE_PATH =
+  'M344.33 175.061c0-.1.047-.136.184-.136h.08v-4.029h-.08c-.137 0-.185-.035-.185-.136v-.095h.922c.81 0 .923.006.94.052.028.07.028.068-.031.127a.23.23 0 0 1-.14.052h-.089l.01.517c.005.284-.004.53-.02.547-.017.016-.214.079-.44.139l-.409.109.314.147.314.147-.388.207a4 4 0 0 0-.402.23c-.008.013.169.127.393.253.225.126.402.24.393.253a2.4 2.4 0 0 1-.278.183 2 2 0 0 0-.263.174c0 .01.175.077.388.15l.388.131v.842h.089c.104 0 .204.088.177.156a.3.3 0 0 0-.018.062c0 .008-.416.014-.925.014h-.925zm2.229-1.105c-.166-.078-.488-.343-.544-.449-.028-.052-.015-.051.156.007.25.084.41.057.674-.114q.396-.257.562-.257.213-.003-.007-.163a.84.84 0 0 0-.644-.141.5.5 0 0 1-.177.02c-.008-.008.056-.082.143-.165.086-.083.147-.161.135-.173-.012-.013-.136-.022-.276-.02-.226.001-.326.023-.58.13-.058.024-.056.014.016-.118.104-.19.31-.397.476-.476.197-.095.518-.105.76-.023.222.075.447.194.594.317l.1.082-.14.001a.9.9 0 0 0-.281.06l-.141.057.333.018c.438.024.63.114.972.458l.247.249-.28.019c-.334.023-.455.072-.927.38-.621.403-.835.458-1.17.3z'
+
+function R6CallsEditSymbol({ marker }: { marker: MarkerGlyphData }) {
+  return (
+    <g className={`marker-symbol r6calls-edit-symbol r6calls-edit-symbol-${marker.type}`}>
+      {r6CallsEditSymbolShape(marker)}
     </g>
   )
+}
+
+function r6CallsEditSymbolShape(marker: MarkerGlyphData) {
+  switch (marker.type) {
+    case 'bomb':
+      return (
+        <>
+          <rect className="r6calls-danger-fill r6calls-dark-stroke" x="-9" y="-9" width="18" height="18" rx="2" />
+          <path className="r6calls-light-stroke" d="M-4 -6h8M-4 0h8M-4 6h8" />
+          <text className="r6calls-symbol-text" y="4">
+            {marker.siteNumber ?? 1}
+            {marker.siteLetter ?? 'A'}
+          </text>
+        </>
+      )
+    case 'floor-hatch':
+      return <R6CallsPatternBlock x={-9} y={-9} width={18} height={18} tone="hatch" />
+    case 'ceiling-hatch':
+      return <R6CallsPatternBlock x={-9} y={-9} width={18} height={18} tone="ceiling" />
+    case 'breakable-wall':
+      return <R6CallsPatternBlock x={-12} y={-3} width={24} height={6} tone="breakable" />
+    case 'line-of-sight-wall':
+      return (
+        <>
+          <R6CallsPatternBlock x={-12} y={-4} width={24} height={8} tone="line-of-sight" />
+          <path className="r6calls-danger-stroke" d="M-12 0h24" />
+        </>
+      )
+    case 'line-of-sight-floor':
+      return (
+        <>
+          <path className="r6calls-pattern-base line-of-sight" d="M-11 -8h16l6 6v10h-22z" />
+          <path className="r6calls-pattern-line" d="M-10 7 5 -8M-5 8 9 -6M0 8 11 -3" />
+          <path className="r6calls-danger-stroke" d="M-8 -1h16" />
+        </>
+      )
+    case 'skylight':
+      return (
+        <>
+          <rect className="r6calls-pattern-base skylight" x="-10" y="-10" width="20" height="20" rx="1" />
+          <path className="r6calls-light-stroke" d="M-7 -7 7 7M7 -7-7 7" />
+        </>
+      )
+    case 'drone-tunnel':
+      return (
+        <>
+          <rect className="r6calls-pattern-base drone" x="-7" y="-12" width="14" height="24" />
+          <path className="r6calls-purple-stroke" d="M-2 -9v18M3 -9v18" />
+        </>
+      )
+    case 'camera':
+      return (
+        <>
+          <rect className="r6calls-dark-fill r6calls-light-stroke" x="-11" y="-8" width="17" height="13" rx="1.5" />
+          <path className="r6calls-light-fill" d="m6 -4 7-4v14l-7-4z" />
+          <circle className="r6calls-dark-fill" cx="-4" cy="-1.5" r="3.2" />
+        </>
+      )
+    case 'ladder':
+      return (
+        <>
+          <path className="r6calls-light-stroke ladder-rail" d="M-7 -12v24M7 -12v24" />
+          <path className="r6calls-light-stroke" d="M-7 -8H7M-7 -4H7M-7 0H7M-7 4H7M-7 8H7" />
+        </>
+      )
+    case 'fire-extinguisher':
+      return (
+        <>
+          <path className="r6calls-danger-fill" d="M-4 -7h8l2 4v12a5 5 0 0 1-10 0V-3z" />
+          <path className="r6calls-light-stroke" d="M-3 -11h6M0 -11v4M4 -5h5" />
+          <path className="r6calls-dark-stroke" d="M-4 -1h8" />
+        </>
+      )
+    case 'gas-pipe':
+      return (
+        <svg className="r6calls-source-svg" x="-13" y="-9" width="26" height="18" viewBox="343.9 170.4 7.5 5.4">
+          <path className="r6calls-danger-fill" d={R6CALLS_GAS_PIPE_PATH} />
+        </svg>
+      )
+    case 'insertion-point':
+      return (
+        <>
+          <path className="r6calls-dark-fill r6calls-light-stroke" d="M-10 10V-6l10-6 10 6v16z" />
+          <text className="r6calls-symbol-text" y="5">
+            A
+          </text>
+        </>
+      )
+    case 'text-label':
+      return (
+        <>
+          <rect className="r6calls-dark-fill r6calls-light-stroke" x="-12" y="-8" width="24" height="16" rx="1" />
+          <text className="r6calls-call-text" y="3">
+            CALL
+          </text>
+        </>
+      )
+    case 'compass':
+      return (
+        <>
+          <circle className="r6calls-dark-fill r6calls-light-stroke" cx="0" cy="0" r="11" />
+          <path className="r6calls-light-fill" d="M0-9 4 3 0 1-4 3z" />
+          <path className="r6calls-muted-stroke" d="M0 1v8" />
+        </>
+      )
+    case 'wall':
+      return (
+        <>
+          <rect className="r6calls-light-fill r6calls-dark-stroke" x="-12" y="-4" width="24" height="8" />
+          <path className="r6calls-dark-stroke" d="M-12 0h24" />
+        </>
+      )
+    case 'door':
+      return (
+        <>
+          <rect className="r6calls-light-fill r6calls-dark-stroke" x="-12" y="-3" width="17" height="6" />
+          <path className="r6calls-light-stroke" d="M5 -9v18M5 -9C10 -8 13 -4 13 3" />
+        </>
+      )
+    case 'double-door':
+      return (
+        <>
+          <rect className="r6calls-light-fill r6calls-dark-stroke" x="-14" y="-3" width="28" height="6" />
+          <path className="r6calls-light-stroke" d="M0 -9v18M0 -9C-6 -8 -9 -4 -8 3M0 -9C6 -8 9 -4 8 3" />
+        </>
+      )
+    case 'window':
+      return (
+        <>
+          <rect className="r6calls-light-fill r6calls-dark-stroke" x="-12" y="-5" width="24" height="10" />
+          <path className="r6calls-window-stroke" d="M-10 0h20" />
+        </>
+      )
+    case 'double-window':
+      return (
+        <>
+          <rect className="r6calls-light-fill r6calls-dark-stroke" x="-13" y="-6" width="26" height="12" />
+          <path className="r6calls-window-stroke" d="M-11 -1h22M-11 3h22" />
+        </>
+      )
+    default:
+      return null
+  }
+}
+
+function R6CallsPatternBlock({
+  height,
+  tone,
+  width,
+  x,
+  y,
+}: {
+  height: number
+  tone: 'hatch' | 'ceiling' | 'breakable' | 'line-of-sight'
+  width: number
+  x: number
+  y: number
+}) {
+  const lineStep = Math.max(4, Math.min(width, height) / 2)
+  const first = x - height
+  const second = first + lineStep
+  const third = second + lineStep
+  const fourth = third + lineStep
+  const fifth = fourth + lineStep
+
+  return (
+    <>
+      <rect className={`r6calls-pattern-base ${tone}`} x={x} y={y} width={width} height={height} />
+      <path
+        className="r6calls-pattern-line"
+        d={`M${first} ${y + height} L${first + height} ${y} M${second} ${y + height} L${second + height} ${y} M${third} ${y + height} L${third + height} ${y} M${fourth} ${y + height} L${fourth + height} ${y} M${fifth} ${y + height} L${fifth + height} ${y}`}
+      />
+    </>
+  )
+}
+
+function MarkerSymbolTransform({ children, marker }: { children: ReactNode; marker: MarkerGlyphData }) {
+  return <g transform={`rotate(${markerRotation(marker)}) scale(${markerSize(marker)})`}>{children}</g>
 }
 
 function MarkerIcon({
@@ -2732,18 +3416,25 @@ function getInitialLocale() {
   return 'en'
 }
 
-function getDefaultDraftTranslation(locale: string) {
-  if (locale === 'zh-CN') {
-    return '保险库舱口'
-  }
-  if (locale === 'ja-JP') {
-    return '金庫ハッチ'
-  }
-  if (locale === 'ko-KR') {
-    return '금고 해치'
+function resolveMarkerTranslation(
+  translations: TranslationEntry[],
+  markerId: string | null,
+  locale: string,
+) {
+  if (!markerId || locale === 'en') {
+    return ''
   }
 
-  return ''
+  return (
+    translations.find(
+      (translation) =>
+        translation.entityType === 'marker' &&
+        translation.entityId === markerId &&
+        translation.field === 'label' &&
+        translation.locale === locale &&
+        translation.status !== 'deprecated',
+    )?.value ?? ''
+  )
 }
 
 function draftFromCommunityMarker(marker: CommunityMarker): DraftMarker {
@@ -2786,10 +3477,16 @@ function markerWithPendingDraftUpdate(marker: CommunityMarker, draft: DraftMarke
 }
 
 function communityMarkerMetadataFromDraft(draft: DraftMarker): Partial<CommunityMarker> {
+  const visualMetadata = {
+    ...(draft.size !== undefined && draft.size !== 1 ? { size: draft.size } : {}),
+    ...markerRotationMetadataFromDraft(draft),
+  }
+
   if (draft.type === 'bomb') {
     return {
       siteNumber: draft.siteNumber,
       siteLetter: draft.siteLetter,
+      ...visualMetadata,
     }
   }
 
@@ -2797,27 +3494,47 @@ function communityMarkerMetadataFromDraft(draft: DraftMarker): Partial<Community
     return {
       spawnNumber: draft.spawnNumber,
       spawnName: draft.spawnName,
+      ...visualMetadata,
     }
   }
 
-  if (draft.type === 'vertical-route' || draft.type === 'ladder') {
+  if (draft.type === 'vertical-route') {
     return {
       direction: draft.direction,
+      ...visualMetadata,
     }
   }
 
-  if (draft.type === 'ceiling-hatch') {
-    return draft.size !== undefined && draft.size !== 1 ? { size: draft.size } : {}
-  }
+  return visualMetadata
+}
 
-  if (draft.type === 'text-label') {
-    return {
-      ...(draft.size !== undefined && draft.size !== 1 ? { size: draft.size } : {}),
-      ...(draft.rotation !== undefined && draft.rotation !== 0 ? { rotation: draft.rotation } : {}),
-    }
-  }
+function markerRotationMetadataFromDraft(draft: DraftMarker): Partial<CommunityMarker> {
+  return draft.rotation !== undefined && draft.rotation !== 0 ? { rotation: draft.rotation } : {}
+}
 
-  return {}
+function markerFromPendingAddDraft({ clientId, draft }: PendingAddDraft): CommunityMarker {
+  const normalizedDraft = normalizeDraftForPatch(draft)
+
+  return {
+    id: pendingAddMarkerId(clientId),
+    mapId: normalizedDraft.mapId,
+    floorId: normalizedDraft.floorId,
+    type: normalizedDraft.type,
+    label: normalizedDraft.label,
+    x: normalizedDraft.x,
+    y: normalizedDraft.y,
+    ...communityMarkerMetadataFromDraft(normalizedDraft),
+    source: 'community',
+    status: 'proposed',
+  }
+}
+
+function pendingAddMarkerId(clientId: string) {
+  return `${PENDING_ADD_MARKER_ID_PREFIX}${clientId}`
+}
+
+function pendingAddClientIdFromMarkerId(markerId: string) {
+  return markerId.startsWith(PENDING_ADD_MARKER_ID_PREFIX) ? markerId.slice(PENDING_ADD_MARKER_ID_PREFIX.length) : null
 }
 
 function omitMarkerUpdate(updates: Record<string, DraftMarker>, markerId: string) {
@@ -2834,10 +3551,10 @@ function draftAtCoordinate(
   floorId: string,
   x: number,
   y: number,
-  type?: MarkerType,
+  tool?: MarkerToolDefinition,
 ): DraftMarker {
   return {
-    ...(type ? draftWithTypeDefaults(draft, type) : draft),
+    ...(tool ? draftWithToolDefaults(draft, tool) : draft),
     mapId,
     floorId,
     x,
@@ -2872,7 +3589,7 @@ function draftWithTypeDefaults(draft: DraftMarker, type: MarkerType, resetLabel 
     return resetLabel ? syncDraftLabel(next) : next
   }
 
-  if (type === 'vertical-route' || type === 'ladder') {
+  if (type === 'vertical-route') {
     const next = {
       ...base,
       direction: draft.direction ?? 'up',
@@ -2881,11 +3598,11 @@ function draftWithTypeDefaults(draft: DraftMarker, type: MarkerType, resetLabel 
     return resetLabel ? syncDraftLabel(next) : next
   }
 
-  if (type === 'ceiling-hatch') {
+  if (isHatchMarker(type)) {
     return {
       ...base,
       label: resetLabel ? defaultLabelForType(type) : base.label,
-      size: draft.type === 'ceiling-hatch' ? (draft.size ?? 1) : 1,
+      size: markerSize(draft),
     }
   }
 
@@ -2893,8 +3610,8 @@ function draftWithTypeDefaults(draft: DraftMarker, type: MarkerType, resetLabel 
     return {
       ...base,
       label: resetLabel ? defaultLabelForType(type) : base.label,
-      size: draft.type === 'text-label' ? textLabelSize(draft) : 1,
-      rotation: draft.type === 'text-label' ? textLabelRotation(draft) : 0,
+      size: markerSize(draft),
+      rotation: markerRotation(draft),
     }
   }
 
@@ -2914,7 +3631,24 @@ function draftBaseForType(draft: DraftMarker, type: MarkerType): DraftMarker {
     label: draft.label,
     x: draft.x,
     y: draft.y,
+    size: markerSize(draft),
+    rotation: draft.rotation ?? 0,
   }
+}
+
+function draftWithToolDefaults(draft: DraftMarker, tool: MarkerToolDefinition, resetLabel = true): DraftMarker {
+  const nextDraft = draftWithTypeDefaults(draft, tool.type, resetLabel)
+
+  if (tool.direction) {
+    const draftWithDirection = {
+      ...nextDraft,
+      direction: tool.direction,
+    }
+
+    return resetLabel ? syncDraftLabel(draftWithDirection) : draftWithDirection
+  }
+
+  return nextDraft
 }
 
 function syncDraftLabel(draft: DraftMarker): DraftMarker {
@@ -2942,27 +3676,30 @@ function syncDraftLabel(draft: DraftMarker): DraftMarker {
     }
   }
 
-  if (draft.type === 'ladder') {
-    return {
-      ...draft,
-      label: `Ladder ${draft.direction ?? 'up'}`,
-    }
-  }
-
   return draft
 }
 
-function draftPreviewForType(type: MarkerType): MarkerGlyphData {
-  return draftWithTypeDefaults(
+function draftPreviewForTool(tool: MarkerToolDefinition): MarkerGlyphData {
+  return draftWithToolDefaults(
     {
       mapId: 'preview',
       floorId: '1f',
-      type,
-      label: defaultLabelForType(type),
+      type: tool.type,
+      label: tool.defaultLabel,
       x: 0,
       y: 0,
     },
-    type,
+    tool,
+  )
+}
+
+function markerToolLabelKey(marker: MarkerGlyphData) {
+  return (
+    MARKER_TOOLS.find(
+      (tool) =>
+        tool.type === marker.type &&
+        (tool.type !== 'vertical-route' || !tool.direction || tool.direction === (marker.direction ?? 'up')),
+    )?.labelKey ?? 'type'
   )
 }
 
@@ -2983,10 +3720,6 @@ function formatMarkerDisplayLabel(
     return t ? `${t('markerTypeVerticalRoute')} ${directionLabel(marker.direction, t)}` : `Vertical route ${marker.direction ?? 'up'}`
   }
 
-  if (marker.type === 'ladder') {
-    return t ? `${t('markerTypeLadder')} ${directionLabel(marker.direction, t)}` : `Ladder ${marker.direction ?? 'up'}`
-  }
-
   return fallback
 }
 
@@ -3001,11 +3734,15 @@ function formatSpawnMarker(marker: MarkerGlyphData) {
 }
 
 function directionIconFile(direction?: MarkerDirection) {
-  return direction === 'down' ? MARKER_ICON_FILES.down : MARKER_ICON_FILES.up
+  return direction === 'down' ? DIRECTION_ICON_FILES.down : DIRECTION_ICON_FILES.up
 }
 
 function directionLabel(direction: MarkerDirection | undefined, t: (key: string) => string) {
   return direction === 'down' ? t('directionDown') : t('directionUp')
+}
+
+function isHatchMarker(type: MarkerType) {
+  return type === 'ceiling-hatch' || type === 'floor-hatch'
 }
 
 function positiveIntegerFromInput(value: string, fallback: number) {
@@ -3034,44 +3771,20 @@ function normalizedRotationFromInput(value: string, fallback: number) {
   return Math.round(Math.min(180, Math.max(-180, parsed)))
 }
 
-function textLabelSize(marker: Pick<CommunityMarker, 'size'>) {
+function markerSize(marker: Pick<CommunityMarker, 'size'>) {
   return marker.size ?? 1
 }
 
-function textLabelRotation(marker: Pick<CommunityMarker, 'rotation'>) {
+function markerHitRadius(marker: Pick<CommunityMarker, 'size'>) {
+  return Math.round(Math.max(14, 14 * markerSize(marker)) * 10) / 10
+}
+
+function markerRotation(marker: Pick<CommunityMarker, 'rotation'>) {
   return marker.rotation ?? 0
 }
 
 function defaultLabelForType(type: MarkerType) {
-  if (type === 'camera') {
-    return 'Security camera'
-  }
-
-  if (type === 'ceiling-hatch') {
-    return 'Ceiling hatch'
-  }
-
-  if (type === 'text-label') {
-    return 'Area label'
-  }
-
-  if (type === 'skylight') {
-    return 'Skylight'
-  }
-
-  if (type === 'vertical-route') {
-    return 'Vertical route up'
-  }
-
-  if (type === 'ladder') {
-    return 'Ladder up'
-  }
-
-  if (type === 'bomb') {
-    return 'Bomb 1A'
-  }
-
-  return '1 - Main Gate'
+  return MARKER_DEFAULT_LABELS.get(type) ?? 'New community marker'
 }
 
 export default App

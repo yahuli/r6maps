@@ -93,6 +93,7 @@ export function buildMarkerPatch(
 
 export function buildChangeSetPatch({
   addDraft,
+  addDrafts,
   updates,
   deleteMarkerIds,
   markers,
@@ -100,6 +101,7 @@ export function buildChangeSetPatch({
   options,
 }: {
   addDraft?: DraftMarker
+  addDrafts?: DraftMarker[]
   updates?: Array<{ markerId: string; draft: DraftMarker }>
   deleteMarkerIds?: string[]
   markers: CommunityMarker[]
@@ -141,9 +143,12 @@ export function buildChangeSetPatch({
     }
   }
 
-  const addMarker = addDraft ? markerFromNewDraft(addDraft, markers) : undefined
-  if (addMarker) {
-    touchedMapIds.add(addMarker.mapId)
+  const addMarkers: CommunityMarker[] = []
+  for (const draft of [addDraft, ...(addDrafts ?? [])].filter((draft): draft is DraftMarker => Boolean(draft))) {
+    const marker = markerFromNewDraft(draft, [...markers, ...addMarkers])
+
+    addMarkers.push(marker)
+    touchedMapIds.add(marker.mapId)
   }
 
   if (touchedMapIds.size === 0) {
@@ -157,9 +162,7 @@ export function buildChangeSetPatch({
         .filter((marker) => marker.mapId === mapId && !deleteIds.has(marker.id))
         .map((marker) => replacements.get(marker.id) ?? marker)
 
-      if (addMarker?.mapId === mapId) {
-        content.push(addMarker)
-      }
+      content.push(...addMarkers.filter((marker) => marker.mapId === mapId))
 
       return {
         path: markerFilePathForMapId(mapId),
@@ -171,10 +174,10 @@ export function buildChangeSetPatch({
   const localizedTranslations = localizedUpdateTranslations(new Set(replacements.keys()), options)
   const addLocalizedLabel = options?.localizedLabel?.trim()
   const addTranslation =
-    addMarker && options?.locale && options.locale !== 'en' && addLocalizedLabel
+    addMarkers.length === 1 && options?.locale && options.locale !== 'en' && addLocalizedLabel
       ? {
           entityType: 'marker' as const,
-          entityId: addMarker.id,
+          entityId: addMarkers[0].id,
           field: 'label' as const,
           locale: options.locale,
           value: addLocalizedLabel,
@@ -202,7 +205,7 @@ export function buildChangeSetPatch({
     })
   }
 
-  const addCount = addMarker ? 1 : 0
+  const addCount = addMarkers.length
   const updateCount = replacements.size
   const deleteCount = deleteIds.size
   const mapLabel = touchedMapIds.size === 1 ? Array.from(touchedMapIds)[0] : `${touchedMapIds.size}-maps`
@@ -528,13 +531,12 @@ function normalizeDraftMarker(draft: DraftMarker): DraftMarker {
     }
   }
 
-  if (draft.type === 'vertical-route' || draft.type === 'ladder') {
+  if (draft.type === 'vertical-route') {
     const direction = draft.direction === 'down' ? 'down' : 'up'
-    const labelPrefix = draft.type === 'ladder' ? 'Ladder' : 'Vertical route'
 
     return {
       ...draft,
-      label: `${labelPrefix} ${direction}`,
+      label: `Vertical route ${direction}`,
       direction,
     }
   }
@@ -548,15 +550,22 @@ function normalizeDraftMarker(draft: DraftMarker): DraftMarker {
 
   return {
     ...draft,
-    label: draft.label.trim() || 'New community marker',
+    label: draft.label.trim() || defaultMarkerLabel(draft.type),
   }
 }
 
 function markerMetadataFromDraft(draft: DraftMarker) {
+  const size = normalizedMarkerSize(draft.size)
+  const visualMetadata = {
+    ...(size && size !== 1 ? { size } : {}),
+    ...markerRotationMetadataFromDraft(draft),
+  }
+
   if (draft.type === 'bomb') {
     return {
       siteNumber: draft.siteNumber,
       siteLetter: draft.siteLetter,
+      ...visualMetadata,
     }
   }
 
@@ -564,32 +573,24 @@ function markerMetadataFromDraft(draft: DraftMarker) {
     return {
       spawnNumber: draft.spawnNumber,
       spawnName: draft.spawnName?.trim(),
+      ...visualMetadata,
     }
   }
 
-  if (draft.type === 'vertical-route' || draft.type === 'ladder') {
+  if (draft.type === 'vertical-route') {
     return {
       direction: draft.direction,
+      ...visualMetadata,
     }
   }
 
-  if (draft.type === 'ceiling-hatch') {
-    const size = normalizedMarkerSize(draft.size)
+  return visualMetadata
+}
 
-    return size && size !== 1 ? { size } : {}
-  }
+function markerRotationMetadataFromDraft(draft: DraftMarker) {
+  const rotation = normalizedMarkerRotation(draft.rotation)
 
-  if (draft.type === 'text-label') {
-    const size = normalizedMarkerSize(draft.size)
-    const rotation = normalizedMarkerRotation(draft.rotation)
-
-    return {
-      ...(size && size !== 1 ? { size } : {}),
-      ...(rotation !== undefined && rotation !== 0 ? { rotation } : {}),
-    }
-  }
-
-  return {}
+  return rotation !== undefined && rotation !== 0 ? { rotation } : {}
 }
 
 function normalizedMarkerSize(value: number | undefined) {
@@ -614,4 +615,29 @@ function positiveIntegerOrDefault(value: number | undefined, fallback: number) {
 
 function spawnNameFromLabel(label: string) {
   return label.replace(/^\d+\s*-\s*/, '').trim()
+}
+
+function defaultMarkerLabel(type: DraftMarker['type']) {
+  if (type === 'camera') return 'Security camera'
+  if (type === 'ceiling-hatch') return 'Ceiling hatch'
+  if (type === 'floor-hatch') return 'Floor hatch'
+  if (type === 'breakable-wall') return 'Breakable wall'
+  if (type === 'line-of-sight-wall') return 'Line of sight wall'
+  if (type === 'line-of-sight-floor') return 'Line of sight floor'
+  if (type === 'text-label') return 'Label'
+  if (type === 'spawn') return '1 - Main Gate'
+  if (type === 'skylight') return 'Skylight'
+  if (type === 'drone-tunnel') return 'Drone tunnel'
+  if (type === 'vertical-route') return 'Vertical route up'
+  if (type === 'ladder') return 'Ladder'
+  if (type === 'fire-extinguisher') return 'Fire extinguisher'
+  if (type === 'gas-pipe') return 'Gas pipe'
+  if (type === 'insertion-point') return 'Insertion point'
+  if (type === 'compass') return 'Compass'
+  if (type === 'wall') return 'Wall'
+  if (type === 'door') return 'Door'
+  if (type === 'double-door') return 'Double door'
+  if (type === 'window') return 'Window'
+  if (type === 'double-window') return 'Double window'
+  return 'New community marker'
 }

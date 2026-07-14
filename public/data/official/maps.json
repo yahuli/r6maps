@@ -88,25 +88,25 @@
         "id": "b1",
         "name": "B1",
         "sort": 0,
-        "image": "maps/official/calypso-casino/b1.png"
+        "image": "maps/official/calypso-casino/b1.e26588af.avif"
       },
       {
         "id": "1f",
         "name": "1F",
         "sort": 1,
-        "image": "maps/official/calypso-casino/1f.png"
+        "image": "maps/official/calypso-casino/1f.56f92b80.avif"
       },
       {
         "id": "2f",
         "name": "2F",
         "sort": 2,
-        "image": "maps/official/calypso-casino/2f.png"
+        "image": "maps/official/calypso-casino/2f.45ee2d5a.avif"
       },
       {
         "id": "roof",
         "name": "Roof",
         "sort": 99,
-        "image": "maps/official/calypso-casino/roof.png"
+        "image": "maps/official/calypso-casino/roof.3ca5efed.avif"
       }
     ]
   },

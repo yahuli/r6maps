@@ -246,6 +246,22 @@ function localizeFloorName(floor: OfficialMap['floors'][number], locale: string,
   })
 }
 
+function resolveViewerSelection(maps: OfficialMap[], hash: string) {
+  const route = parseViewerHash(hash)
+  const requestedMap = route.mapId ? maps.find((map) => map.id === route.mapId) : undefined
+  const map = requestedMap ?? maps.find((candidate) => candidate.id === 'calypso-casino') ?? maps[0]
+
+  if (!map) {
+    throw new Error('No official maps are available')
+  }
+
+  return {
+    floorId: resolveRouteFloorId(map.floors, route.floorArg) ?? map.floors[0]?.id ?? '1f',
+    map,
+    mode: route.mode,
+  }
+}
+
 type IssueOpsPayload = {
   kind: 'r6maps-community-change-set'
   version: 1
@@ -326,24 +342,64 @@ function App() {
   const pendingAddDraftSerial = useRef(0)
 
   useEffect(() => {
-    async function loadData() {
-      const [officialMaps, communityMarkers, communityTranslations, availableLocales, messages] = await Promise.all([
+    let active = true
+    let communityLoadTimer: number | undefined
+
+    async function loadCriticalData() {
+      const [officialMaps, communityTranslations, availableLocales, messages] = await Promise.all([
         fetchJson<OfficialMap[]>('data/official/maps.json'),
-        loadCommunityMarkers(fetchJson),
         fetchJson<TranslationEntry[]>('data/community/translations.json'),
         fetchJson<LocaleInfo[]>('data/i18n/locales.json'),
         fetchJson<UiMessages>('data/i18n/ui.json'),
       ])
 
+      if (!active) {
+        return
+      }
+
+      if (parseAppHash(window.location.hash).kind === 'viewer') {
+        const selection = resolveViewerSelection(officialMaps, window.location.hash)
+        const compactAtLoad = window.matchMedia('(max-width: 760px)').matches
+
+        setSelectedMapId(selection.map.id)
+        setSelectedFloorId(selection.floorId)
+        setEditMode(selection.mode === 'edit' && !compactAtLoad)
+
+        if (selection.mode === 'edit' && compactAtLoad) {
+          const viewHash = buildViewerHash(selection.map.id, selection.floorId, 'view')
+          window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${viewHash}`)
+        }
+      }
+
       setMaps(officialMaps)
-      setMarkers(communityMarkers)
       setTranslations(communityTranslations)
       setLocales(availableLocales)
       setUiMessages(messages)
+
+      communityLoadTimer = window.setTimeout(() => {
+        void loadCommunityData()
+      }, 0)
+    }
+
+    async function loadCommunityData() {
+      const communityMarkers = await loadCommunityMarkers(fetchJson)
+
+      if (!active) {
+        return
+      }
+
+      setMarkers(communityMarkers)
       setDataLoaded(true)
     }
 
-    void loadData()
+    void loadCriticalData()
+
+    return () => {
+      active = false
+      if (communityLoadTimer !== undefined) {
+        window.clearTimeout(communityLoadTimer)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -366,19 +422,16 @@ function App() {
       return
     }
 
-    const route = parseViewerHash(window.location.hash)
-    const nextMap = route.mapId ? maps.find((map) => map.id === route.mapId) : undefined
-    const map = nextMap ?? maps.find((candidate) => candidate.id === 'calypso-casino') ?? maps[0]
-    const floorId = resolveRouteFloorId(map.floors, route.floorArg) ?? map.floors[0]?.id ?? '1f'
+    const selection = resolveViewerSelection(maps, window.location.hash)
 
-    setSelectedMapId(map.id)
-    setSelectedFloorId(floorId)
-    setEditMode(route.mode === 'edit' && !isCompact)
+    setSelectedMapId(selection.map.id)
+    setSelectedFloorId(selection.floorId)
+    setEditMode(selection.mode === 'edit' && !isCompact)
     setSelectedMarkerId('')
     setActivePlacementToolId(null)
 
-    if (route.mode === 'edit' && isCompact) {
-      const viewHash = buildViewerHash(map.id, floorId, 'view')
+    if (selection.mode === 'edit' && isCompact) {
+      const viewHash = buildViewerHash(selection.map.id, selection.floorId, 'view')
       window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}${viewHash}`)
     }
   }, [appRoute, dataLoaded, isCompact, maps])
@@ -390,7 +443,7 @@ function App() {
   const isProposalDetailRoute = appRoute.kind === 'proposal-detail'
   const isProposalRoute = isProposalListRoute || isProposalDetailRoute
   const activeProposalNumber = appRoute.kind === 'proposal-detail' ? appRoute.number : null
-  const canEdit = appRoute.kind === 'viewer' && editMode && !isCompact
+  const canEdit = appRoute.kind === 'viewer' && dataLoaded && editMode && !isCompact
   const panelFloorIds = useMemo(() => {
     if (!selectedMap || !selectedFloor) {
       return []

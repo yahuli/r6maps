@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "calypso-casino-b1-ceiling-hatch-ceiling-hatch",
+    "mapId": "calypso-casino",
+    "floorId": "b1",
+    "type": "ceiling-hatch",
+    "label": "Ceiling hatch",
+    "x": 0.591,
+    "y": 0.475,
+    "size": 0.5,
+    "source": "community",
+    "status": "proposed"
+  }
+]
